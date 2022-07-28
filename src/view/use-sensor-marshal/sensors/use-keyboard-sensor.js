@@ -1,6 +1,5 @@
 // @flow
-import { useRef } from 'react';
-import { useMemo, useCallback } from 'use-memo-one';
+import { useRef, useMemo, useCallback } from 'react';
 import { invariant } from '../../../invariant';
 import type {
   SensorAPI,

@@ -1,6 +1,5 @@
 // @flow
-import { useRef } from 'react';
-import { useMemo, useCallback } from 'use-memo-one';
+import { useRef, useMemo, useCallback } from 'react';
 import type { DraggableRubric, DraggableDescriptor } from '../../types';
 import getStyle from './get-style';
 import useDraggablePublisher, {

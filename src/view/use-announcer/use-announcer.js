@@ -1,6 +1,5 @@
 // @flow
-import { useRef, useEffect } from 'react';
-import { useMemo, useCallback } from 'use-memo-one';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import type { Announce, ContextId } from '../../types';
 import { warning } from '../../dev-warning';
 import getBodyElement from '../get-body-element';

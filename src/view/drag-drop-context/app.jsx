@@ -1,8 +1,7 @@
 // @flow
-import React, { useEffect, useRef, type Node } from 'react';
+import React, { useEffect, useRef, type Node, useCallback, useMemo } from 'react';
 import { bindActionCreators } from 'redux';
 import { Provider } from 'react-redux';
-import { useMemo, useCallback } from 'use-memo-one';
 import { invariant } from '../../invariant';
 import createStore from '../../state/create-store';
 import createDimensionMarshal from '../../state/dimension-marshal/dimension-marshal';

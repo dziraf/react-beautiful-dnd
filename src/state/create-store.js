@@ -1,6 +1,10 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
-import { applyMiddleware, createStore, compose } from 'redux';
+import {
+  applyMiddleware,
+  legacy_createStore as createStore,
+  compose,
+} from 'redux';
 import reducer from './reducer';
 import lift from './middleware/lift';
 import style from './middleware/style';

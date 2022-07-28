@@ -1,5 +1,5 @@
 // @flow
-import { useMemo } from 'use-memo-one';
+import { useMemo } from 'react';
 import type { ContextId } from '../../types';
 
 let count = 0;

@@ -1,6 +1,5 @@
 // @flow
-import { useRef } from 'react';
-import { useMemo, useCallback } from 'use-memo-one';
+import { useRef, useMemo, useCallback } from 'react';
 import type { DraggableId, ContextId } from '../../types';
 import type { FocusMarshal, Unregister } from './focus-marshal-types';
 import { dragHandle as dragHandleAttr } from '../data-attributes';

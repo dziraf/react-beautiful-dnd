@@ -10,7 +10,6 @@ var _inheritsLoose = _interopDefault(require('@babel/runtime/helpers/inheritsLoo
 var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
 var redux = require('redux');
 var reactRedux = require('react-redux');
-var useMemoOne = require('use-memo-one');
 var cssBoxModel = require('css-box-model');
 var memoizeOne = _interopDefault(require('memoize-one'));
 var rafSchd = _interopDefault(require('raf-schd'));
@@ -3892,7 +3891,7 @@ var createStore = (function (_ref) {
       getResponders = _ref.getResponders,
       announce = _ref.announce,
       autoScroller = _ref.autoScroller;
-  return redux.createStore(reducer, composeEnhancers(redux.applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
+  return redux.legacy_createStore(reducer, composeEnhancers(redux.applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
 });
 
 var clean$1 = function clean() {
@@ -4990,17 +4989,17 @@ var createStyleEl = function createStyleEl(nonce) {
 };
 
 function useStyleMarshal(contextId, nonce) {
-  var styles = useMemoOne.useMemo(function () {
+  var styles = React.useMemo(function () {
     return getStyles$1(contextId);
   }, [contextId]);
   var alwaysRef = React.useRef(null);
   var dynamicRef = React.useRef(null);
-  var setDynamicStyle = useMemoOne.useCallback(memoizeOne(function (proposed) {
+  var setDynamicStyle = React.useCallback(memoizeOne(function (proposed) {
     var el = dynamicRef.current;
     !el ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot set dynamic style element if it is not set') : invariant(false) : void 0;
     el.textContent = proposed;
   }), []);
-  var setAlwaysStyle = useMemoOne.useCallback(function (proposed) {
+  var setAlwaysStyle = React.useCallback(function (proposed) {
     var el = alwaysRef.current;
     !el ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot set dynamic style element if it is not set') : invariant(false) : void 0;
     el.textContent = proposed;
@@ -5029,10 +5028,10 @@ function useStyleMarshal(contextId, nonce) {
       remove(dynamicRef);
     };
   }, [nonce, setAlwaysStyle, setDynamicStyle, styles.always, styles.resting, contextId]);
-  var dragging = useMemoOne.useCallback(function () {
+  var dragging = React.useCallback(function () {
     return setDynamicStyle(styles.dragging);
   }, [setDynamicStyle, styles.dragging]);
-  var dropping = useMemoOne.useCallback(function (reason) {
+  var dropping = React.useCallback(function (reason) {
     if (reason === 'DROP') {
       setDynamicStyle(styles.dropAnimating);
       return;
@@ -5040,14 +5039,14 @@ function useStyleMarshal(contextId, nonce) {
 
     setDynamicStyle(styles.userCancel);
   }, [setDynamicStyle, styles.dropAnimating, styles.userCancel]);
-  var resting = useMemoOne.useCallback(function () {
+  var resting = React.useCallback(function () {
     if (!dynamicRef.current) {
       return;
     }
 
     setDynamicStyle(styles.resting);
   }, [setDynamicStyle, styles.resting]);
-  var marshal = useMemoOne.useMemo(function () {
+  var marshal = React.useMemo(function () {
     return {
       dragging: dragging,
       dropping: dropping,
@@ -5096,7 +5095,7 @@ function useFocusMarshal(contextId) {
   var recordRef = React.useRef(null);
   var restoreFocusFrameRef = React.useRef(null);
   var isMountedRef = React.useRef(false);
-  var register = useMemoOne.useCallback(function register(id, focus) {
+  var register = React.useCallback(function register(id, focus) {
     var entry = {
       id: id,
       focus: focus
@@ -5111,19 +5110,19 @@ function useFocusMarshal(contextId) {
       }
     };
   }, []);
-  var tryGiveFocus = useMemoOne.useCallback(function tryGiveFocus(tryGiveFocusTo) {
+  var tryGiveFocus = React.useCallback(function tryGiveFocus(tryGiveFocusTo) {
     var handle = findDragHandle(contextId, tryGiveFocusTo);
 
     if (handle && handle !== document.activeElement) {
       handle.focus();
     }
   }, [contextId]);
-  var tryShiftRecord = useMemoOne.useCallback(function tryShiftRecord(previous, redirectTo) {
+  var tryShiftRecord = React.useCallback(function tryShiftRecord(previous, redirectTo) {
     if (recordRef.current === previous) {
       recordRef.current = redirectTo;
     }
   }, []);
-  var tryRestoreFocusRecorded = useMemoOne.useCallback(function tryRestoreFocusRecorded() {
+  var tryRestoreFocusRecorded = React.useCallback(function tryRestoreFocusRecorded() {
     if (restoreFocusFrameRef.current) {
       return;
     }
@@ -5141,7 +5140,7 @@ function useFocusMarshal(contextId) {
       }
     });
   }, [tryGiveFocus]);
-  var tryRecordFocus = useMemoOne.useCallback(function tryRecordFocus(id) {
+  var tryRecordFocus = React.useCallback(function tryRecordFocus(id) {
     recordRef.current = null;
     var focused = document.activeElement;
 
@@ -5166,7 +5165,7 @@ function useFocusMarshal(contextId) {
       }
     };
   }, []);
-  var marshal = useMemoOne.useMemo(function () {
+  var marshal = React.useMemo(function () {
     return {
       register: register,
       tryRecordFocus: tryRecordFocus,
@@ -5321,7 +5320,7 @@ function createRegistry() {
 }
 
 function useRegistry() {
-  var registry = useMemoOne.useMemo(createRegistry, []);
+  var registry = React.useMemo(createRegistry, []);
   React.useEffect(function () {
     return function unmount() {
       requestAnimationFrame(registry.clean);
@@ -5354,7 +5353,7 @@ var getId = function getId(contextId) {
   return "rbd-announcement-" + contextId;
 };
 function useAnnouncer(contextId) {
-  var id = useMemoOne.useMemo(function () {
+  var id = React.useMemo(function () {
     return getId(contextId);
   }, [contextId]);
   var ref = React.useRef(null);
@@ -5382,7 +5381,7 @@ function useAnnouncer(contextId) {
       });
     };
   }, [id]);
-  var announce = useMemoOne.useCallback(function (message) {
+  var announce = React.useCallback(function (message) {
     var el = ref.current;
 
     if (el) {
@@ -5407,7 +5406,7 @@ function useUniqueId(prefix, options) {
     options = defaults;
   }
 
-  return useMemoOne.useMemo(function () {
+  return React.useMemo(function () {
     return "" + prefix + options.separator + count++;
   }, [options.separator, prefix]);
 }
@@ -5423,7 +5422,7 @@ function useHiddenTextElement(_ref2) {
   var uniqueId = useUniqueId('hidden-text', {
     separator: '-'
   });
-  var id = useMemoOne.useMemo(function () {
+  var id = React.useMemo(function () {
     return getElementId({
       contextId: contextId,
       uniqueId: uniqueId
@@ -5759,7 +5758,7 @@ function getCaptureBindings(_ref) {
 function useMouseSensor(api) {
   var phaseRef = React.useRef(idle$1);
   var unbindEventsRef = React.useRef(noop);
-  var startCaptureBinding = useMemoOne.useMemo(function () {
+  var startCaptureBinding = React.useMemo(function () {
     return {
       eventName: 'mousedown',
       fn: function onMouseDown(event) {
@@ -5799,7 +5798,7 @@ function useMouseSensor(api) {
       }
     };
   }, [api]);
-  var preventForcePressBinding = useMemoOne.useMemo(function () {
+  var preventForcePressBinding = React.useMemo(function () {
     return {
       eventName: 'webkitmouseforcewillbegin',
       fn: function fn(event) {
@@ -5831,14 +5830,14 @@ function useMouseSensor(api) {
       }
     };
   }, [api]);
-  var listenForCapture = useMemoOne.useCallback(function listenForCapture() {
+  var listenForCapture = React.useCallback(function listenForCapture() {
     var options = {
       passive: false,
       capture: true
     };
     unbindEventsRef.current = bindEvents(window, [preventForcePressBinding, startCaptureBinding], options);
   }, [preventForcePressBinding, startCaptureBinding]);
-  var stop = useMemoOne.useCallback(function () {
+  var stop = React.useCallback(function () {
     var current = phaseRef.current;
 
     if (current.type === 'IDLE') {
@@ -5849,7 +5848,7 @@ function useMouseSensor(api) {
     unbindEventsRef.current();
     listenForCapture();
   }, [listenForCapture]);
-  var cancel = useMemoOne.useCallback(function () {
+  var cancel = React.useCallback(function () {
     var phase = phaseRef.current;
     stop();
 
@@ -5863,7 +5862,7 @@ function useMouseSensor(api) {
       phase.actions.abort();
     }
   }, [stop]);
-  var bindCapturingEvents = useMemoOne.useCallback(function bindCapturingEvents() {
+  var bindCapturingEvents = React.useCallback(function bindCapturingEvents() {
     var options = {
       capture: true,
       passive: false
@@ -5880,7 +5879,7 @@ function useMouseSensor(api) {
     });
     unbindEventsRef.current = bindEvents(window, bindings, options);
   }, [cancel, stop]);
-  var startPendingDrag = useMemoOne.useCallback(function startPendingDrag(actions, point) {
+  var startPendingDrag = React.useCallback(function startPendingDrag(actions, point) {
     !(phaseRef.current.type === 'IDLE') ? process.env.NODE_ENV !== "production" ? invariant(false, 'Expected to move from IDLE to PENDING drag') : invariant(false) : void 0;
     phaseRef.current = {
       type: 'PENDING',
@@ -5989,7 +5988,7 @@ function getDraggingBindings(actions, stop) {
 
 function useKeyboardSensor(api) {
   var unbindEventsRef = React.useRef(noop$1);
-  var startCaptureBinding = useMemoOne.useMemo(function () {
+  var startCaptureBinding = React.useMemo(function () {
     return {
       eventName: 'keydown',
       fn: function onKeyDown(event) {
@@ -6034,7 +6033,7 @@ function useKeyboardSensor(api) {
       }
     };
   }, [api]);
-  var listenForCapture = useMemoOne.useCallback(function tryStartCapture() {
+  var listenForCapture = React.useCallback(function tryStartCapture() {
     var options = {
       passive: false,
       capture: true
@@ -6192,13 +6191,13 @@ function getHandleBindings(_ref2) {
 function useTouchSensor(api) {
   var phaseRef = React.useRef(idle$2);
   var unbindEventsRef = React.useRef(noop);
-  var getPhase = useMemoOne.useCallback(function getPhase() {
+  var getPhase = React.useCallback(function getPhase() {
     return phaseRef.current;
   }, []);
-  var setPhase = useMemoOne.useCallback(function setPhase(phase) {
+  var setPhase = React.useCallback(function setPhase(phase) {
     phaseRef.current = phase;
   }, []);
-  var startCaptureBinding = useMemoOne.useMemo(function () {
+  var startCaptureBinding = React.useMemo(function () {
     return {
       eventName: 'touchstart',
       fn: function onTouchStart(event) {
@@ -6232,14 +6231,14 @@ function useTouchSensor(api) {
       }
     };
   }, [api]);
-  var listenForCapture = useMemoOne.useCallback(function listenForCapture() {
+  var listenForCapture = React.useCallback(function listenForCapture() {
     var options = {
       capture: true,
       passive: false
     };
     unbindEventsRef.current = bindEvents(window, [startCaptureBinding], options);
   }, [startCaptureBinding]);
-  var stop = useMemoOne.useCallback(function () {
+  var stop = React.useCallback(function () {
     var current = phaseRef.current;
 
     if (current.type === 'IDLE') {
@@ -6254,7 +6253,7 @@ function useTouchSensor(api) {
     unbindEventsRef.current();
     listenForCapture();
   }, [listenForCapture, setPhase]);
-  var cancel = useMemoOne.useCallback(function () {
+  var cancel = React.useCallback(function () {
     var phase = phaseRef.current;
     stop();
 
@@ -6268,7 +6267,7 @@ function useTouchSensor(api) {
       phase.actions.abort();
     }
   }, [stop]);
-  var bindCapturingEvents = useMemoOne.useCallback(function bindCapturingEvents() {
+  var bindCapturingEvents = React.useCallback(function bindCapturingEvents() {
     var options = {
       capture: true,
       passive: false
@@ -6286,7 +6285,7 @@ function useTouchSensor(api) {
       unbindWindow();
     };
   }, [cancel, getPhase, stop]);
-  var startDragging = useMemoOne.useCallback(function startDragging() {
+  var startDragging = React.useCallback(function startDragging() {
     var phase = getPhase();
     !(phase.type === 'PENDING') ? process.env.NODE_ENV !== "production" ? invariant(false, "Cannot start dragging from phase " + phase.type) : invariant(false) : void 0;
     var actions = phase.actions.fluidLift(phase.point);
@@ -6296,7 +6295,7 @@ function useTouchSensor(api) {
       hasMoved: false
     });
   }, [getPhase, setPhase]);
-  var startPendingDrag = useMemoOne.useCallback(function startPendingDrag(actions, point) {
+  var startPendingDrag = React.useCallback(function startPendingDrag(actions, point) {
     !(getPhase().type === 'IDLE') ? process.env.NODE_ENV !== "production" ? invariant(false, 'Expected to move from IDLE to PENDING drag') : invariant(false) : void 0;
     var longPressTimerId = setTimeout(startDragging, timeForLongPress);
     setPhase({
@@ -6750,7 +6749,7 @@ function useSensorMarshal(_ref4) {
   var lockAPI = React.useState(function () {
     return create();
   })[0];
-  var tryAbandonLock = useMemoOne.useCallback(function tryAbandonLock(previous, current) {
+  var tryAbandonLock = React.useCallback(function tryAbandonLock(previous, current) {
     if (previous.isDragging && !current.isDragging) {
       lockAPI.tryAbandon();
     }
@@ -6767,7 +6766,7 @@ function useSensorMarshal(_ref4) {
   useIsomorphicLayoutEffect(function () {
     return lockAPI.tryAbandon;
   }, [lockAPI.tryAbandon]);
-  var canGetLock = useMemoOne.useCallback(function (draggableId) {
+  var canGetLock = React.useCallback(function (draggableId) {
     return canStart({
       lockAPI: lockAPI,
       registry: registry,
@@ -6775,7 +6774,7 @@ function useSensorMarshal(_ref4) {
       draggableId: draggableId
     });
   }, [lockAPI, registry, store]);
-  var tryGetLock = useMemoOne.useCallback(function (draggableId, forceStop, options) {
+  var tryGetLock = React.useCallback(function (draggableId, forceStop, options) {
     return tryStart({
       lockAPI: lockAPI,
       registry: registry,
@@ -6786,14 +6785,14 @@ function useSensorMarshal(_ref4) {
       sourceEvent: options && options.sourceEvent ? options.sourceEvent : null
     });
   }, [contextId, lockAPI, registry, store]);
-  var findClosestDraggableId = useMemoOne.useCallback(function (event) {
+  var findClosestDraggableId = React.useCallback(function (event) {
     return tryGetClosestDraggableIdFromEvent(contextId, event);
   }, [contextId]);
-  var findOptionsForDraggable = useMemoOne.useCallback(function (id) {
+  var findOptionsForDraggable = React.useCallback(function (id) {
     var entry = registry.draggable.findById(id);
     return entry ? entry.options : null;
   }, [registry.draggable]);
-  var tryReleaseLock = useMemoOne.useCallback(function tryReleaseLock() {
+  var tryReleaseLock = React.useCallback(function tryReleaseLock() {
     if (!lockAPI.isClaimed()) {
       return;
     }
@@ -6804,8 +6803,8 @@ function useSensorMarshal(_ref4) {
       store.dispatch(flush());
     }
   }, [lockAPI, store]);
-  var isLockClaimed = useMemoOne.useCallback(lockAPI.isClaimed, [lockAPI]);
-  var api = useMemoOne.useMemo(function () {
+  var isLockClaimed = React.useCallback(lockAPI.isClaimed, [lockAPI]);
+  var api = React.useMemo(function () {
     return {
       canGetLock: canGetLock,
       tryGetLock: tryGetLock,
@@ -6846,7 +6845,7 @@ function App(props) {
   var lazyStoreRef = React.useRef(null);
   useStartupValidation();
   var lastPropsRef = usePrevious(props);
-  var getResponders = useMemoOne.useCallback(function () {
+  var getResponders = React.useCallback(function () {
     return createResponders(lastPropsRef.current);
   }, [lastPropsRef]);
   var announce = useAnnouncer(contextId);
@@ -6855,10 +6854,10 @@ function App(props) {
     text: dragHandleUsageInstructions
   });
   var styleMarshal = useStyleMarshal(contextId, nonce);
-  var lazyDispatch = useMemoOne.useCallback(function (action) {
+  var lazyDispatch = React.useCallback(function (action) {
     getStore(lazyStoreRef).dispatch(action);
   }, []);
-  var marshalCallbacks = useMemoOne.useMemo(function () {
+  var marshalCallbacks = React.useMemo(function () {
     return redux.bindActionCreators({
       publishWhileDragging: publishWhileDragging,
       updateDroppableScroll: updateDroppableScroll,
@@ -6868,10 +6867,10 @@ function App(props) {
     }, lazyDispatch);
   }, [lazyDispatch]);
   var registry = useRegistry();
-  var dimensionMarshal = useMemoOne.useMemo(function () {
+  var dimensionMarshal = React.useMemo(function () {
     return createDimensionMarshal(registry, marshalCallbacks);
   }, [registry, marshalCallbacks]);
-  var autoScroller = useMemoOne.useMemo(function () {
+  var autoScroller = React.useMemo(function () {
     return createAutoScroller(_extends({
       scrollWindow: scrollWindow,
       scrollDroppable: dimensionMarshal.scrollDroppable
@@ -6880,7 +6879,7 @@ function App(props) {
     }, lazyDispatch)));
   }, [dimensionMarshal.scrollDroppable, lazyDispatch]);
   var focusMarshal = useFocusMarshal(contextId);
-  var store = useMemoOne.useMemo(function () {
+  var store = React.useMemo(function () {
     return createStore({
       announce: announce,
       autoScroller: autoScroller,
@@ -6898,7 +6897,7 @@ function App(props) {
   }
 
   lazyStoreRef.current = store;
-  var tryResetStore = useMemoOne.useCallback(function () {
+  var tryResetStore = React.useCallback(function () {
     var current = getStore(lazyStoreRef);
     var state = current.getState();
 
@@ -6906,24 +6905,24 @@ function App(props) {
       current.dispatch(flush());
     }
   }, []);
-  var isDragging = useMemoOne.useCallback(function () {
+  var isDragging = React.useCallback(function () {
     var state = getStore(lazyStoreRef).getState();
     return state.isDragging || state.phase === 'DROP_ANIMATING';
   }, []);
-  var appCallbacks = useMemoOne.useMemo(function () {
+  var appCallbacks = React.useMemo(function () {
     return {
       isDragging: isDragging,
       tryAbort: tryResetStore
     };
   }, [isDragging, tryResetStore]);
   setCallbacks(appCallbacks);
-  var getCanLift = useMemoOne.useCallback(function (id) {
+  var getCanLift = React.useCallback(function (id) {
     return canStartDrag(getStore(lazyStoreRef).getState(), id);
   }, []);
-  var getIsMovementAllowed = useMemoOne.useCallback(function () {
+  var getIsMovementAllowed = React.useCallback(function () {
     return isMovementAllowed(getStore(lazyStoreRef).getState());
   }, []);
-  var appContext = useMemoOne.useMemo(function () {
+  var appContext = React.useMemo(function () {
     return {
       marshal: dimensionMarshal,
       focus: focusMarshal,
@@ -6957,7 +6956,7 @@ function reset$1() {
   count$1 = 0;
 }
 function useInstanceCount() {
-  return useMemoOne.useMemo(function () {
+  return React.useMemo(function () {
     return "" + count$1++;
   }, []);
 }
@@ -7268,7 +7267,7 @@ function useDroppablePublisher(args) {
   var registry = appContext.registry,
       marshal = appContext.marshal;
   var previousRef = usePrevious(args);
-  var descriptor = useMemoOne.useMemo(function () {
+  var descriptor = React.useMemo(function () {
     return {
       id: args.droppableId,
       type: args.type,
@@ -7276,7 +7275,7 @@ function useDroppablePublisher(args) {
     };
   }, [args.droppableId, args.mode, args.type]);
   var publishedDescriptorRef = React.useRef(descriptor);
-  var memoizedUpdateScroll = useMemoOne.useMemo(function () {
+  var memoizedUpdateScroll = React.useMemo(function () {
     return memoizeOne(function (x, y) {
       !whileDraggingRef.current ? process.env.NODE_ENV !== "production" ? invariant(false, 'Can only update scroll when dragging') : invariant(false) : void 0;
       var scroll = {
@@ -7286,7 +7285,7 @@ function useDroppablePublisher(args) {
       marshal.updateDroppableScroll(descriptor.id, scroll);
     });
   }, [descriptor.id, marshal]);
-  var getClosestScroll = useMemoOne.useCallback(function () {
+  var getClosestScroll = React.useCallback(function () {
     var dragging = whileDraggingRef.current;
 
     if (!dragging || !dragging.env.closestScrollable) {
@@ -7295,14 +7294,14 @@ function useDroppablePublisher(args) {
 
     return getScroll$1(dragging.env.closestScrollable);
   }, []);
-  var updateScroll = useMemoOne.useCallback(function () {
+  var updateScroll = React.useCallback(function () {
     var scroll = getClosestScroll();
     memoizedUpdateScroll(scroll.x, scroll.y);
   }, [getClosestScroll, memoizedUpdateScroll]);
-  var scheduleScrollUpdate = useMemoOne.useMemo(function () {
+  var scheduleScrollUpdate = React.useMemo(function () {
     return rafSchd(updateScroll);
   }, [updateScroll]);
-  var onClosestScroll = useMemoOne.useCallback(function () {
+  var onClosestScroll = React.useCallback(function () {
     var dragging = whileDraggingRef.current;
     var closest = getClosestScrollableFromDrag(dragging);
     !(dragging && closest) ? process.env.NODE_ENV !== "production" ? invariant(false, 'Could not find scroll options while scrolling') : invariant(false) : void 0;
@@ -7315,7 +7314,7 @@ function useDroppablePublisher(args) {
 
     scheduleScrollUpdate();
   }, [scheduleScrollUpdate, updateScroll]);
-  var getDimensionAndWatchScroll = useMemoOne.useCallback(function (windowScroll, options) {
+  var getDimensionAndWatchScroll = React.useCallback(function (windowScroll, options) {
     !!whileDraggingRef.current ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot collect a droppable while a drag is occurring') : invariant(false) : void 0;
     var previous = previousRef.current;
     var ref = previous.getDroppableRef();
@@ -7351,13 +7350,13 @@ function useDroppablePublisher(args) {
 
     return dimension;
   }, [appContext.contextId, descriptor, onClosestScroll, previousRef]);
-  var getScrollWhileDragging = useMemoOne.useCallback(function () {
+  var getScrollWhileDragging = React.useCallback(function () {
     var dragging = whileDraggingRef.current;
     var closest = getClosestScrollableFromDrag(dragging);
     !(dragging && closest) ? process.env.NODE_ENV !== "production" ? invariant(false, 'Can only recollect Droppable client for Droppables that have a scroll container') : invariant(false) : void 0;
     return getScroll$1(closest);
   }, []);
-  var dragStopped = useMemoOne.useCallback(function () {
+  var dragStopped = React.useCallback(function () {
     var dragging = whileDraggingRef.current;
     !dragging ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot stop drag when no active drag') : invariant(false) : void 0;
     var closest = getClosestScrollableFromDrag(dragging);
@@ -7371,7 +7370,7 @@ function useDroppablePublisher(args) {
     closest.removeAttribute(scrollContainer.contextId);
     closest.removeEventListener('scroll', onClosestScroll, getListenerOptions(dragging.scrollOptions));
   }, [onClosestScroll, scheduleScrollUpdate]);
-  var scroll = useMemoOne.useCallback(function (change) {
+  var scroll = React.useCallback(function (change) {
     var dragging = whileDraggingRef.current;
     !dragging ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot scroll when there is no drag') : invariant(false) : void 0;
     var closest = getClosestScrollableFromDrag(dragging);
@@ -7379,7 +7378,7 @@ function useDroppablePublisher(args) {
     closest.scrollTop += change.y;
     closest.scrollLeft += change.x;
   }, []);
-  var callbacks = useMemoOne.useMemo(function () {
+  var callbacks = React.useMemo(function () {
     return {
       getDimensionAndWatchScroll: getDimensionAndWatchScroll,
       getScrollWhileDragging: getScrollWhileDragging,
@@ -7387,7 +7386,7 @@ function useDroppablePublisher(args) {
       scroll: scroll
     };
   }, [dragStopped, getDimensionAndWatchScroll, getScrollWhileDragging, scroll]);
-  var entry = useMemoOne.useMemo(function () {
+  var entry = React.useMemo(function () {
     return {
       uniqueId: uniqueId,
       descriptor: descriptor,
@@ -7477,7 +7476,7 @@ var getStyle = function getStyle(_ref2) {
 
 function Placeholder(props) {
   var animateOpenTimerRef = React.useRef(null);
-  var tryClearAnimateOpenTimer = useMemoOne.useCallback(function () {
+  var tryClearAnimateOpenTimer = React.useCallback(function () {
     if (!animateOpenTimerRef.current) {
       return;
     }
@@ -7515,7 +7514,7 @@ function Placeholder(props) {
     });
     return tryClearAnimateOpenTimer;
   }, [animate, isAnimatingOpenOnMount, tryClearAnimateOpenTimer]);
-  var onSizeChangeEnd = useMemoOne.useCallback(function (event) {
+  var onSizeChangeEnd = React.useCallback(function (event) {
     if (event.propertyName !== 'height') {
       return;
     }
@@ -7793,19 +7792,19 @@ function useDraggablePublisher(args) {
       canDragInteractiveElements = args.canDragInteractiveElements,
       shouldRespectForcePress = args.shouldRespectForcePress,
       isEnabled = args.isEnabled;
-  var options = useMemoOne.useMemo(function () {
+  var options = React.useMemo(function () {
     return {
       canDragInteractiveElements: canDragInteractiveElements,
       shouldRespectForcePress: shouldRespectForcePress,
       isEnabled: isEnabled
     };
   }, [canDragInteractiveElements, isEnabled, shouldRespectForcePress]);
-  var getDimension = useMemoOne.useCallback(function (windowScroll) {
+  var getDimension = React.useCallback(function (windowScroll) {
     var el = getDraggableRef();
     !el ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot get dimension when no ref is set') : invariant(false) : void 0;
     return getDimension$1(descriptor, el, windowScroll);
   }, [descriptor, getDraggableRef]);
-  var entry = useMemoOne.useMemo(function () {
+  var entry = React.useMemo(function () {
     return {
       uniqueId: uniqueId,
       descriptor: descriptor,
@@ -7870,10 +7869,10 @@ function preventHtml5Dnd(event) {
 
 function Draggable(props) {
   var ref = React.useRef(null);
-  var setRef = useMemoOne.useCallback(function (el) {
+  var setRef = React.useCallback(function (el) {
     ref.current = el;
   }, []);
-  var getRef = useMemoOne.useCallback(function () {
+  var getRef = React.useCallback(function () {
     return ref.current;
   }, []);
 
@@ -7886,7 +7885,7 @@ function Draggable(props) {
       type = _useRequiredContext2.type,
       droppableId = _useRequiredContext2.droppableId;
 
-  var descriptor = useMemoOne.useMemo(function () {
+  var descriptor = React.useMemo(function () {
     return {
       id: props.draggableId,
       index: props.index,
@@ -7906,7 +7905,7 @@ function Draggable(props) {
   useClonePropValidation(isClone);
 
   if (!isClone) {
-    var forPublisher = useMemoOne.useMemo(function () {
+    var forPublisher = React.useMemo(function () {
       return {
         descriptor: descriptor,
         registry: registry,
@@ -7919,7 +7918,7 @@ function Draggable(props) {
     useDraggablePublisher(forPublisher);
   }
 
-  var dragHandleProps = useMemoOne.useMemo(function () {
+  var dragHandleProps = React.useMemo(function () {
     return isEnabled ? {
       tabIndex: 0,
       role: 'button',
@@ -7930,7 +7929,7 @@ function Draggable(props) {
       onDragStart: preventHtml5Dnd
     } : null;
   }, [contextId, dragHandleUsageInstructionsId, draggableId, isEnabled]);
-  var onMoveEnd = useMemoOne.useCallback(function (event) {
+  var onMoveEnd = React.useCallback(function (event) {
     if (mapped.type !== 'DRAGGING') {
       return;
     }
@@ -7945,7 +7944,7 @@ function Draggable(props) {
 
     dropAnimationFinishedAction();
   }, [dropAnimationFinishedAction, mapped]);
-  var provided = useMemoOne.useMemo(function () {
+  var provided = React.useMemo(function () {
     var style = getStyle$1(mapped);
     var onTransitionEnd = mapped.type === 'DRAGGING' && mapped.dropping ? onMoveEnd : null;
     var result = {
@@ -7960,7 +7959,7 @@ function Draggable(props) {
     };
     return result;
   }, [contextId, dragHandleProps, draggableId, mapped, onMoveEnd, setRef]);
-  var rubric = useMemoOne.useMemo(function () {
+  var rubric = React.useMemo(function () {
     return {
       draggableId: descriptor.id,
       type: descriptor.type,
@@ -8215,9 +8214,7 @@ var mapDispatchToProps = {
   dropAnimationFinished: dropAnimationFinished
 };
 var ConnectedDraggable = reactRedux.connect(makeMapStateToProps, mapDispatchToProps, null, {
-  context: StoreContext,
-  pure: true,
-  areStatePropsEqual: isStrictEqual
+  context: StoreContext
 })(Draggable);
 
 function PrivateDraggable(props) {
@@ -8261,16 +8258,16 @@ function Droppable(props) {
       useClone = props.useClone,
       updateViewportMaxScroll = props.updateViewportMaxScroll,
       getContainerForClone = props.getContainerForClone;
-  var getDroppableRef = useMemoOne.useCallback(function () {
+  var getDroppableRef = React.useCallback(function () {
     return droppableRef.current;
   }, []);
-  var setDroppableRef = useMemoOne.useCallback(function (value) {
+  var setDroppableRef = React.useCallback(function (value) {
     droppableRef.current = value;
   }, []);
-  var getPlaceholderRef = useMemoOne.useCallback(function () {
+  var getPlaceholderRef = React.useCallback(function () {
     return placeholderRef.current;
   }, []);
-  var setPlaceholderRef = useMemoOne.useCallback(function (value) {
+  var setPlaceholderRef = React.useCallback(function (value) {
     placeholderRef.current = value;
   }, []);
   useValidation({
@@ -8278,7 +8275,7 @@ function Droppable(props) {
     getDroppableRef: getDroppableRef,
     getPlaceholderRef: getPlaceholderRef
   });
-  var onPlaceholderTransitionEnd = useMemoOne.useCallback(function () {
+  var onPlaceholderTransitionEnd = React.useCallback(function () {
     if (isMovementAllowed()) {
       updateViewportMaxScroll({
         maxScroll: getMaxWindowScroll()
@@ -8311,7 +8308,7 @@ function Droppable(props) {
       onTransitionEnd: onPlaceholderTransitionEnd
     });
   });
-  var provided = useMemoOne.useMemo(function () {
+  var provided = React.useMemo(function () {
     return {
       innerRef: setDroppableRef,
       placeholder: placeholder,
@@ -8322,7 +8319,7 @@ function Droppable(props) {
     };
   }, [contextId, droppableId, placeholder, setDroppableRef]);
   var isUsingCloneFor = useClone ? useClone.dragging.draggableId : null;
-  var droppableContext = useMemoOne.useMemo(function () {
+  var droppableContext = React.useMemo(function () {
     return {
       droppableId: droppableId,
       type: type,

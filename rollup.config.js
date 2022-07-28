@@ -40,6 +40,12 @@ const commonjsArgs = {
       'isValidElementType',
       'isContextConsumer',
     ],
+    'node_modules/use-sync-external-store/shim/with-selector.js': [
+      'useSyncExternalStoreWithSelector',
+    ],
+    'node_modules/use-sync-external-store/shim/index.js': [
+      'useSyncExternalStore',
+    ],
   },
 };
 

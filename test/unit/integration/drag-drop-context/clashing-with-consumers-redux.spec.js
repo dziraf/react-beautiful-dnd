@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import { render } from '@testing-library/react';
 import { Provider, connect } from 'react-redux';
-import { createStore } from 'redux';
+import { legacy_createStore as createStore } from 'redux';
 import { Droppable, Draggable, DragDropContext } from '../../../../src';
 import type { DraggableProvided, DroppableProvided } from '../../../../src';
 

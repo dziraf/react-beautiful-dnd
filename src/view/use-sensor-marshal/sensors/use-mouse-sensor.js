@@ -1,6 +1,5 @@
 // @flow
-import { useRef } from 'react';
-import { useCallback, useMemo } from 'use-memo-one';
+import { useRef, useMemo, useCallback } from 'react';
 import type { Position } from 'css-box-model';
 import { invariant } from '../../../invariant';
 import type {

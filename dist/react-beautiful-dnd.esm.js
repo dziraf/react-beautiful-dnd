@@ -1,9 +1,8 @@
-import React, { useLayoutEffect, useEffect, useRef, useState, useContext } from 'react';
+import React, { useLayoutEffect, useEffect, useMemo, useRef, useCallback, useState, useContext } from 'react';
 import _inheritsLoose from '@babel/runtime/helpers/esm/inheritsLoose';
 import _extends from '@babel/runtime/helpers/esm/extends';
-import { createStore as createStore$1, applyMiddleware, compose, bindActionCreators } from 'redux';
+import { legacy_createStore, applyMiddleware, compose, bindActionCreators } from 'redux';
 import { Provider, connect } from 'react-redux';
-import { useMemo, useCallback } from 'use-memo-one';
 import { getRect, expand, offset, withScroll, getBox, createBox, calculateBox } from 'css-box-model';
 import memoizeOne from 'memoize-one';
 import rafSchd from 'raf-schd';
@@ -3885,7 +3884,7 @@ var createStore = (function (_ref) {
       getResponders = _ref.getResponders,
       announce = _ref.announce,
       autoScroller = _ref.autoScroller;
-  return createStore$1(reducer, composeEnhancers(applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
+  return legacy_createStore(reducer, composeEnhancers(applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
 });
 
 var clean$1 = function clean() {
@@ -8208,9 +8207,7 @@ var mapDispatchToProps = {
   dropAnimationFinished: dropAnimationFinished
 };
 var ConnectedDraggable = connect(makeMapStateToProps, mapDispatchToProps, null, {
-  context: StoreContext,
-  pure: true,
-  areStatePropsEqual: isStrictEqual
+  context: StoreContext
 })(Draggable);
 
 function PrivateDraggable(props) {

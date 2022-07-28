@@ -257,41 +257,59 @@
     onDragEnd: onDragEnd
   };
 
-  function symbolObservablePonyfill(root) {
-  	var result;
-  	var Symbol = root.Symbol;
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
 
-  	if (typeof Symbol === 'function') {
-  		if (Symbol.observable) {
-  			result = Symbol.observable;
-  		} else {
-  			result = Symbol('observable');
-  			Symbol.observable = result;
-  		}
-  	} else {
-  		result = '@@observable';
-  	}
-
-  	return result;
+    return obj;
   }
 
-  /* global window */
+  function ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
 
-  var root;
+    if (Object.getOwnPropertySymbols) {
+      var symbols = Object.getOwnPropertySymbols(object);
+      if (enumerableOnly) symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+      keys.push.apply(keys, symbols);
+    }
 
-  if (typeof self !== 'undefined') {
-    root = self;
-  } else if (typeof window !== 'undefined') {
-    root = window;
-  } else if (typeof global !== 'undefined') {
-    root = global;
-  } else if (typeof module !== 'undefined') {
-    root = module;
-  } else {
-    root = Function('return this')();
+    return keys;
   }
 
-  var result = symbolObservablePonyfill(root);
+  function _objectSpread2(target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i] != null ? arguments[i] : {};
+
+      if (i % 2) {
+        ownKeys(Object(source), true).forEach(function (key) {
+          _defineProperty(target, key, source[key]);
+        });
+      } else if (Object.getOwnPropertyDescriptors) {
+        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+      } else {
+        ownKeys(Object(source)).forEach(function (key) {
+          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+      }
+    }
+
+    return target;
+  }
+
+  // Inlined version of the `symbol-observable` polyfill
+  var $$observable = (function () {
+    return typeof Symbol === 'function' && Symbol.observable || '@@observable';
+  })();
 
   /**
    * These are private action types reserved by Redux.
@@ -326,37 +344,96 @@
     return Object.getPrototypeOf(obj) === proto;
   }
 
+  // Inlined / shortened version of `kindOf` from https://github.com/jonschlinkert/kind-of
+  function miniKindOf(val) {
+    if (val === void 0) return 'undefined';
+    if (val === null) return 'null';
+    var type = typeof val;
+
+    switch (type) {
+      case 'boolean':
+      case 'string':
+      case 'number':
+      case 'symbol':
+      case 'function':
+        {
+          return type;
+        }
+    }
+
+    if (Array.isArray(val)) return 'array';
+    if (isDate(val)) return 'date';
+    if (isError(val)) return 'error';
+    var constructorName = ctorName(val);
+
+    switch (constructorName) {
+      case 'Symbol':
+      case 'Promise':
+      case 'WeakMap':
+      case 'WeakSet':
+      case 'Map':
+      case 'Set':
+        return constructorName;
+    } // other
+
+
+    return type.slice(8, -1).toLowerCase().replace(/\s/g, '');
+  }
+
+  function ctorName(val) {
+    return typeof val.constructor === 'function' ? val.constructor.name : null;
+  }
+
+  function isError(val) {
+    return val instanceof Error || typeof val.message === 'string' && val.constructor && typeof val.constructor.stackTraceLimit === 'number';
+  }
+
+  function isDate(val) {
+    if (val instanceof Date) return true;
+    return typeof val.toDateString === 'function' && typeof val.getDate === 'function' && typeof val.setDate === 'function';
+  }
+
+  function kindOf(val) {
+    var typeOfVal = typeof val;
+
+    {
+      typeOfVal = miniKindOf(val);
+    }
+
+    return typeOfVal;
+  }
+
   /**
-   * Creates a Redux store that holds the state tree.
-   * The only way to change the data in the store is to call `dispatch()` on it.
+   * @deprecated
    *
-   * There should only be a single store in your app. To specify how different
-   * parts of the state tree respond to actions, you may combine several reducers
-   * into a single reducer function by using `combineReducers`.
+   * **We recommend using the `configureStore` method
+   * of the `@reduxjs/toolkit` package**, which replaces `createStore`.
    *
-   * @param {Function} reducer A function that returns the next state tree, given
-   * the current state tree and the action to handle.
+   * Redux Toolkit is our recommended approach for writing Redux logic today,
+   * including store setup, reducers, data fetching, and more.
    *
-   * @param {any} [preloadedState] The initial state. You may optionally specify it
-   * to hydrate the state from the server in universal apps, or to restore a
-   * previously serialized user session.
-   * If you use `combineReducers` to produce the root reducer function, this must be
-   * an object with the same shape as `combineReducers` keys.
+   * **For more details, please read this Redux docs page:**
+   * **https://redux.js.org/introduction/why-rtk-is-redux-today**
    *
-   * @param {Function} [enhancer] The store enhancer. You may optionally specify it
-   * to enhance the store with third-party capabilities such as middleware,
-   * time travel, persistence, etc. The only store enhancer that ships with Redux
-   * is `applyMiddleware()`.
+   * `configureStore` from Redux Toolkit is an improved version of `createStore` that
+   * simplifies setup and helps avoid common bugs.
    *
-   * @returns {Store} A Redux store that lets you read the state, dispatch actions
-   * and subscribe to changes.
+   * You should not be using the `redux` core package by itself today, except for learning purposes.
+   * The `createStore` method from the core `redux` package will not be removed, but we encourage
+   * all users to migrate to using Redux Toolkit for all Redux code.
+   *
+   * If you want to use `createStore` without this visual deprecation warning, use
+   * the `legacy_createStore` import instead:
+   *
+   * `import { legacy_createStore as createStore} from 'redux'`
+   *
    */
 
   function createStore(reducer, preloadedState, enhancer) {
     var _ref2;
 
     if (typeof preloadedState === 'function' && typeof enhancer === 'function' || typeof enhancer === 'function' && typeof arguments[3] === 'function') {
-      throw new Error('It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function.');
+      throw new Error( 'It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function. See https://redux.js.org/tutorials/fundamentals/part-4-store#creating-a-store-with-enhancers for an example.');
     }
 
     if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
@@ -366,14 +443,14 @@
 
     if (typeof enhancer !== 'undefined') {
       if (typeof enhancer !== 'function') {
-        throw new Error('Expected the enhancer to be a function.');
+        throw new Error( "Expected the enhancer to be a function. Instead, received: '" + kindOf(enhancer) + "'");
       }
 
       return enhancer(createStore)(reducer, preloadedState);
     }
 
     if (typeof reducer !== 'function') {
-      throw new Error('Expected the reducer to be a function.');
+      throw new Error( "Expected the root reducer to be a function. Instead, received: '" + kindOf(reducer) + "'");
     }
 
     var currentReducer = reducer;
@@ -403,7 +480,7 @@
 
     function getState() {
       if (isDispatching) {
-        throw new Error('You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
+        throw new Error( 'You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
       }
 
       return currentState;
@@ -435,11 +512,11 @@
 
     function subscribe(listener) {
       if (typeof listener !== 'function') {
-        throw new Error('Expected the listener to be a function.');
+        throw new Error( "Expected the listener to be a function. Instead, received: '" + kindOf(listener) + "'");
       }
 
       if (isDispatching) {
-        throw new Error('You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
+        throw new Error( 'You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api/store#subscribelistener for more details.');
       }
 
       var isSubscribed = true;
@@ -451,7 +528,7 @@
         }
 
         if (isDispatching) {
-          throw new Error('You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
+          throw new Error( 'You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api/store#subscribelistener for more details.');
         }
 
         isSubscribed = false;
@@ -490,15 +567,15 @@
 
     function dispatch(action) {
       if (!isPlainObject(action)) {
-        throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
+        throw new Error( "Actions must be plain objects. Instead, the actual type was: '" + kindOf(action) + "'. You may need to add middleware to your store setup to handle dispatching other values, such as 'redux-thunk' to handle dispatching functions. See https://redux.js.org/tutorials/fundamentals/part-4-store#middleware and https://redux.js.org/tutorials/fundamentals/part-6-async-logic#using-the-redux-thunk-middleware for examples.");
       }
 
       if (typeof action.type === 'undefined') {
-        throw new Error('Actions may not have an undefined "type" property. ' + 'Have you misspelled a constant?');
+        throw new Error( 'Actions may not have an undefined "type" property. You may have misspelled an action type string constant.');
       }
 
       if (isDispatching) {
-        throw new Error('Reducers may not dispatch actions.');
+        throw new Error( 'Reducers may not dispatch actions.');
       }
 
       try {
@@ -531,7 +608,7 @@
 
     function replaceReducer(nextReducer) {
       if (typeof nextReducer !== 'function') {
-        throw new Error('Expected the nextReducer to be a function.');
+        throw new Error( "Expected the nextReducer to be a function. Instead, received: '" + kindOf(nextReducer));
       }
 
       currentReducer = nextReducer; // This action has a similiar effect to ActionTypes.INIT.
@@ -566,7 +643,7 @@
          */
         subscribe: function subscribe(observer) {
           if (typeof observer !== 'object' || observer === null) {
-            throw new TypeError('Expected the observer to be an object.');
+            throw new Error( "Expected the observer to be an object. Instead, received: '" + kindOf(observer) + "'");
           }
 
           function observeState() {
@@ -581,7 +658,7 @@
             unsubscribe: unsubscribe
           };
         }
-      }, _ref[result] = function () {
+      }, _ref[$$observable] = function () {
         return this;
       }, _ref;
     } // When a store is created, an "INIT" action is dispatched so that every
@@ -597,8 +674,40 @@
       subscribe: subscribe,
       getState: getState,
       replaceReducer: replaceReducer
-    }, _ref2[result] = observable, _ref2;
+    }, _ref2[$$observable] = observable, _ref2;
   }
+  /**
+   * Creates a Redux store that holds the state tree.
+   *
+   * **We recommend using `configureStore` from the
+   * `@reduxjs/toolkit` package**, which replaces `createStore`:
+   * **https://redux.js.org/introduction/why-rtk-is-redux-today**
+   *
+   * The only way to change the data in the store is to call `dispatch()` on it.
+   *
+   * There should only be a single store in your app. To specify how different
+   * parts of the state tree respond to actions, you may combine several reducers
+   * into a single reducer function by using `combineReducers`.
+   *
+   * @param {Function} reducer A function that returns the next state tree, given
+   * the current state tree and the action to handle.
+   *
+   * @param {any} [preloadedState] The initial state. You may optionally specify it
+   * to hydrate the state from the server in universal apps, or to restore a
+   * previously serialized user session.
+   * If you use `combineReducers` to produce the root reducer function, this must be
+   * an object with the same shape as `combineReducers` keys.
+   *
+   * @param {Function} [enhancer] The store enhancer. You may optionally specify it
+   * to enhance the store with third-party capabilities such as middleware,
+   * time travel, persistence, etc. The only store enhancer that ships with Redux
+   * is `applyMiddleware()`.
+   *
+   * @returns {Store} A Redux store that lets you read the state, dispatch actions
+   * and subscribe to changes.
+   */
+
+  var legacy_createStore = createStore;
 
   /**
    * Prints a warning in the console if it exists.
@@ -657,7 +766,7 @@
     }
 
     if (typeof actionCreators !== 'object' || actionCreators === null) {
-      throw new Error("bindActionCreators expected an object or a function, instead received " + (actionCreators === null ? 'null' : typeof actionCreators) + ". " + "Did you write \"import ActionCreators from\" instead of \"import * as ActionCreators from\"?");
+      throw new Error( "bindActionCreators expected an object or a function, but instead received: '" + kindOf(actionCreators) + "'. " + "Did you write \"import ActionCreators from\" instead of \"import * as ActionCreators from\"?");
     }
 
     var boundActionCreators = {};
@@ -671,54 +780,6 @@
     }
 
     return boundActionCreators;
-  }
-
-  function _defineProperty(obj, key, value) {
-    if (key in obj) {
-      Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
-    } else {
-      obj[key] = value;
-    }
-
-    return obj;
-  }
-
-  function ownKeys(object, enumerableOnly) {
-    var keys = Object.keys(object);
-
-    if (Object.getOwnPropertySymbols) {
-      keys.push.apply(keys, Object.getOwnPropertySymbols(object));
-    }
-
-    if (enumerableOnly) keys = keys.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    });
-    return keys;
-  }
-
-  function _objectSpread2(target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i] != null ? arguments[i] : {};
-
-      if (i % 2) {
-        ownKeys(source, true).forEach(function (key) {
-          _defineProperty(target, key, source[key]);
-        });
-      } else if (Object.getOwnPropertyDescriptors) {
-        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-      } else {
-        ownKeys(source).forEach(function (key) {
-          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-        });
-      }
-    }
-
-    return target;
   }
 
   /**
@@ -780,7 +841,7 @@
         var store = createStore.apply(void 0, arguments);
 
         var _dispatch = function dispatch() {
-          throw new Error('Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
+          throw new Error( 'Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
         };
 
         var middlewareAPI = {
@@ -793,7 +854,7 @@
           return middleware(middlewareAPI);
         });
         _dispatch = compose.apply(void 0, chain)(store.dispatch);
-        return _objectSpread2({}, store, {
+        return _objectSpread2(_objectSpread2({}, store), {}, {
           dispatch: _dispatch
         });
       };
@@ -817,6 +878,466 @@
 
   function createCommonjsModule(fn, module) {
   	return module = { exports: {} }, fn(module, module.exports), module.exports;
+  }
+
+  function h(a,b){return a===b&&(0!==a||1/a===1/b)||a!==a&&b!==b}var k="function"===typeof Object.is?Object.is:h,l=React__default.useState,m=React__default.useEffect,n=React__default.useLayoutEffect,p=React__default.useDebugValue;function q(a,b){var d=b(),f=l({inst:{value:d,getSnapshot:b}}),c=f[0].inst,g=f[1];n(function(){c.value=d;c.getSnapshot=b;r(c)&&g({inst:c});},[a,d,b]);m(function(){r(c)&&g({inst:c});return a(function(){r(c)&&g({inst:c});})},[a]);p(d);return d}
+  function r(a){var b=a.getSnapshot;a=a.value;try{var d=b();return !k(a,d)}catch(f){return !0}}function t(a,b){return b()}var u="undefined"===typeof window||"undefined"===typeof window.document||"undefined"===typeof window.document.createElement?t:q;var useSyncExternalStore=void 0!==React__default.useSyncExternalStore?React__default.useSyncExternalStore:u;
+
+  var useSyncExternalStoreShim_development = createCommonjsModule(function (module, exports) {
+
+  {
+    (function() {
+
+  /* global __REACT_DEVTOOLS_GLOBAL_HOOK__ */
+  if (
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined' &&
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart ===
+      'function'
+  ) {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
+  }
+            var React = React__default;
+
+  var ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+
+  function error(format) {
+    {
+      {
+        for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+          args[_key2 - 1] = arguments[_key2];
+        }
+
+        printWarning('error', format, args);
+      }
+    }
+  }
+
+  function printWarning(level, format, args) {
+    // When changing this logic, you might want to also
+    // update consoleWithStackDev.www.js as well.
+    {
+      var ReactDebugCurrentFrame = ReactSharedInternals.ReactDebugCurrentFrame;
+      var stack = ReactDebugCurrentFrame.getStackAddendum();
+
+      if (stack !== '') {
+        format += '%s';
+        args = args.concat([stack]);
+      } // eslint-disable-next-line react-internal/safe-string-coercion
+
+
+      var argsWithFormat = args.map(function (item) {
+        return String(item);
+      }); // Careful: RN currently depends on this prefix
+
+      argsWithFormat.unshift('Warning: ' + format); // We intentionally don't use spread (or .apply) directly because it
+      // breaks IE9: https://github.com/facebook/react/issues/13610
+      // eslint-disable-next-line react-internal/no-production-logging
+
+      Function.prototype.apply.call(console[level], console, argsWithFormat);
+    }
+  }
+
+  /**
+   * inlined Object.is polyfill to avoid requiring consumers ship their own
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+   */
+  function is(x, y) {
+    return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y // eslint-disable-line no-self-compare
+    ;
+  }
+
+  var objectIs = typeof Object.is === 'function' ? Object.is : is;
+
+  // dispatch for CommonJS interop named imports.
+
+  var useState = React.useState,
+      useEffect = React.useEffect,
+      useLayoutEffect = React.useLayoutEffect,
+      useDebugValue = React.useDebugValue;
+  var didWarnOld18Alpha = false;
+  var didWarnUncachedGetSnapshot = false; // Disclaimer: This shim breaks many of the rules of React, and only works
+  // because of a very particular set of implementation details and assumptions
+  // -- change any one of them and it will break. The most important assumption
+  // is that updates are always synchronous, because concurrent rendering is
+  // only available in versions of React that also have a built-in
+  // useSyncExternalStore API. And we only use this shim when the built-in API
+  // does not exist.
+  //
+  // Do not assume that the clever hacks used by this hook also work in general.
+  // The point of this shim is to replace the need for hacks by other libraries.
+
+  function useSyncExternalStore(subscribe, getSnapshot, // Note: The shim does not use getServerSnapshot, because pre-18 versions of
+  // React do not expose a way to check if we're hydrating. So users of the shim
+  // will need to track that themselves and return the correct value
+  // from `getSnapshot`.
+  getServerSnapshot) {
+    {
+      if (!didWarnOld18Alpha) {
+        if (React.startTransition !== undefined) {
+          didWarnOld18Alpha = true;
+
+          error('You are using an outdated, pre-release alpha of React 18 that ' + 'does not support useSyncExternalStore. The ' + 'use-sync-external-store shim will not work correctly. Upgrade ' + 'to a newer pre-release.');
+        }
+      }
+    } // Read the current snapshot from the store on every render. Again, this
+    // breaks the rules of React, and only works here because of specific
+    // implementation details, most importantly that updates are
+    // always synchronous.
+
+
+    var value = getSnapshot();
+
+    {
+      if (!didWarnUncachedGetSnapshot) {
+        var cachedValue = getSnapshot();
+
+        if (!objectIs(value, cachedValue)) {
+          error('The result of getSnapshot should be cached to avoid an infinite loop');
+
+          didWarnUncachedGetSnapshot = true;
+        }
+      }
+    } // Because updates are synchronous, we don't queue them. Instead we force a
+    // re-render whenever the subscribed state changes by updating an some
+    // arbitrary useState hook. Then, during render, we call getSnapshot to read
+    // the current value.
+    //
+    // Because we don't actually use the state returned by the useState hook, we
+    // can save a bit of memory by storing other stuff in that slot.
+    //
+    // To implement the early bailout, we need to track some things on a mutable
+    // object. Usually, we would put that in a useRef hook, but we can stash it in
+    // our useState hook instead.
+    //
+    // To force a re-render, we call forceUpdate({inst}). That works because the
+    // new object always fails an equality check.
+
+
+    var _useState = useState({
+      inst: {
+        value: value,
+        getSnapshot: getSnapshot
+      }
+    }),
+        inst = _useState[0].inst,
+        forceUpdate = _useState[1]; // Track the latest getSnapshot function with a ref. This needs to be updated
+    // in the layout phase so we can access it during the tearing check that
+    // happens on subscribe.
+
+
+    useLayoutEffect(function () {
+      inst.value = value;
+      inst.getSnapshot = getSnapshot; // Whenever getSnapshot or subscribe changes, we need to check in the
+      // commit phase if there was an interleaved mutation. In concurrent mode
+      // this can happen all the time, but even in synchronous mode, an earlier
+      // effect may have mutated the store.
+
+      if (checkIfSnapshotChanged(inst)) {
+        // Force a re-render.
+        forceUpdate({
+          inst: inst
+        });
+      }
+    }, [subscribe, value, getSnapshot]);
+    useEffect(function () {
+      // Check for changes right before subscribing. Subsequent changes will be
+      // detected in the subscription handler.
+      if (checkIfSnapshotChanged(inst)) {
+        // Force a re-render.
+        forceUpdate({
+          inst: inst
+        });
+      }
+
+      var handleStoreChange = function () {
+        // TODO: Because there is no cross-renderer API for batching updates, it's
+        // up to the consumer of this library to wrap their subscription event
+        // with unstable_batchedUpdates. Should we try to detect when this isn't
+        // the case and print a warning in development?
+        // The store changed. Check if the snapshot changed since the last time we
+        // read from the store.
+        if (checkIfSnapshotChanged(inst)) {
+          // Force a re-render.
+          forceUpdate({
+            inst: inst
+          });
+        }
+      }; // Subscribe to the store and return a clean-up function.
+
+
+      return subscribe(handleStoreChange);
+    }, [subscribe]);
+    useDebugValue(value);
+    return value;
+  }
+
+  function checkIfSnapshotChanged(inst) {
+    var latestGetSnapshot = inst.getSnapshot;
+    var prevValue = inst.value;
+
+    try {
+      var nextValue = latestGetSnapshot();
+      return !objectIs(prevValue, nextValue);
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function useSyncExternalStore$1(subscribe, getSnapshot, getServerSnapshot) {
+    // Note: The shim does not use getServerSnapshot, because pre-18 versions of
+    // React do not expose a way to check if we're hydrating. So users of the shim
+    // will need to track that themselves and return the correct value
+    // from `getSnapshot`.
+    return getSnapshot();
+  }
+
+  var canUseDOM = !!(typeof window !== 'undefined' && typeof window.document !== 'undefined' && typeof window.document.createElement !== 'undefined');
+
+  var isServerEnvironment = !canUseDOM;
+
+  var shim = isServerEnvironment ? useSyncExternalStore$1 : useSyncExternalStore;
+  var useSyncExternalStore$2 = React.useSyncExternalStore !== undefined ? React.useSyncExternalStore : shim;
+
+  exports.useSyncExternalStore = useSyncExternalStore$2;
+            /* global __REACT_DEVTOOLS_GLOBAL_HOOK__ */
+  if (
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined' &&
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop ===
+      'function'
+  ) {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(new Error());
+  }
+          
+    })();
+  }
+  });
+  var useSyncExternalStoreShim_development_1 = useSyncExternalStoreShim_development.useSyncExternalStore;
+
+  var shim = createCommonjsModule(function (module) {
+
+  {
+    module.exports = useSyncExternalStoreShim_development;
+  }
+  });
+  var shim_1 = shim.useSyncExternalStore;
+
+  var r$1=shim.useSyncExternalStore,t$1=React__default.useRef,u$1=React__default.useEffect,v=React__default.useMemo,w=React__default.useDebugValue;
+
+  var withSelector_development = createCommonjsModule(function (module, exports) {
+
+  {
+    (function() {
+
+  /* global __REACT_DEVTOOLS_GLOBAL_HOOK__ */
+  if (
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined' &&
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart ===
+      'function'
+  ) {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
+  }
+            var React = React__default;
+  var shim$1 = shim;
+
+  /**
+   * inlined Object.is polyfill to avoid requiring consumers ship their own
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+   */
+  function is(x, y) {
+    return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y // eslint-disable-line no-self-compare
+    ;
+  }
+
+  var objectIs = typeof Object.is === 'function' ? Object.is : is;
+
+  var useSyncExternalStore = shim$1.useSyncExternalStore;
+
+  // for CommonJS interop.
+
+  var useRef = React.useRef,
+      useEffect = React.useEffect,
+      useMemo = React.useMemo,
+      useDebugValue = React.useDebugValue; // Same as useSyncExternalStore, but supports selector and isEqual arguments.
+
+  function useSyncExternalStoreWithSelector(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
+    // Use this to track the rendered snapshot.
+    var instRef = useRef(null);
+    var inst;
+
+    if (instRef.current === null) {
+      inst = {
+        hasValue: false,
+        value: null
+      };
+      instRef.current = inst;
+    } else {
+      inst = instRef.current;
+    }
+
+    var _useMemo = useMemo(function () {
+      // Track the memoized state using closure variables that are local to this
+      // memoized instance of a getSnapshot function. Intentionally not using a
+      // useRef hook, because that state would be shared across all concurrent
+      // copies of the hook/component.
+      var hasMemo = false;
+      var memoizedSnapshot;
+      var memoizedSelection;
+
+      var memoizedSelector = function (nextSnapshot) {
+        if (!hasMemo) {
+          // The first time the hook is called, there is no memoized result.
+          hasMemo = true;
+          memoizedSnapshot = nextSnapshot;
+
+          var _nextSelection = selector(nextSnapshot);
+
+          if (isEqual !== undefined) {
+            // Even if the selector has changed, the currently rendered selection
+            // may be equal to the new selection. We should attempt to reuse the
+            // current value if possible, to preserve downstream memoizations.
+            if (inst.hasValue) {
+              var currentSelection = inst.value;
+
+              if (isEqual(currentSelection, _nextSelection)) {
+                memoizedSelection = currentSelection;
+                return currentSelection;
+              }
+            }
+          }
+
+          memoizedSelection = _nextSelection;
+          return _nextSelection;
+        } // We may be able to reuse the previous invocation's result.
+
+
+        // We may be able to reuse the previous invocation's result.
+        var prevSnapshot = memoizedSnapshot;
+        var prevSelection = memoizedSelection;
+
+        if (objectIs(prevSnapshot, nextSnapshot)) {
+          // The snapshot is the same as last time. Reuse the previous selection.
+          return prevSelection;
+        } // The snapshot has changed, so we need to compute a new selection.
+
+
+        // The snapshot has changed, so we need to compute a new selection.
+        var nextSelection = selector(nextSnapshot); // If a custom isEqual function is provided, use that to check if the data
+        // has changed. If it hasn't, return the previous selection. That signals
+        // to React that the selections are conceptually equal, and we can bail
+        // out of rendering.
+
+        // If a custom isEqual function is provided, use that to check if the data
+        // has changed. If it hasn't, return the previous selection. That signals
+        // to React that the selections are conceptually equal, and we can bail
+        // out of rendering.
+        if (isEqual !== undefined && isEqual(prevSelection, nextSelection)) {
+          return prevSelection;
+        }
+
+        memoizedSnapshot = nextSnapshot;
+        memoizedSelection = nextSelection;
+        return nextSelection;
+      }; // Assigning this to a constant so that Flow knows it can't change.
+
+
+      // Assigning this to a constant so that Flow knows it can't change.
+      var maybeGetServerSnapshot = getServerSnapshot === undefined ? null : getServerSnapshot;
+
+      var getSnapshotWithSelector = function () {
+        return memoizedSelector(getSnapshot());
+      };
+
+      var getServerSnapshotWithSelector = maybeGetServerSnapshot === null ? undefined : function () {
+        return memoizedSelector(maybeGetServerSnapshot());
+      };
+      return [getSnapshotWithSelector, getServerSnapshotWithSelector];
+    }, [getSnapshot, getServerSnapshot, selector, isEqual]),
+        getSelection = _useMemo[0],
+        getServerSelection = _useMemo[1];
+
+    var value = useSyncExternalStore(subscribe, getSelection, getServerSelection);
+    useEffect(function () {
+      inst.hasValue = true;
+      inst.value = value;
+    }, [value]);
+    useDebugValue(value);
+    return value;
+  }
+
+  exports.useSyncExternalStoreWithSelector = useSyncExternalStoreWithSelector;
+            /* global __REACT_DEVTOOLS_GLOBAL_HOOK__ */
+  if (
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined' &&
+    typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop ===
+      'function'
+  ) {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(new Error());
+  }
+          
+    })();
+  }
+  });
+  var withSelector_development_1 = withSelector_development.useSyncExternalStoreWithSelector;
+
+  var withSelector = createCommonjsModule(function (module) {
+
+  {
+    module.exports = withSelector_development;
+  }
+  });
+  var withSelector_1 = withSelector.useSyncExternalStoreWithSelector;
+
+  // Default to a dummy "batch" implementation that just runs the callback
+  function defaultNoopBatch(callback) {
+    callback();
+  }
+
+  let batch = defaultNoopBatch; // Allow injecting another batching function later
+
+  const setBatch = newBatch => batch = newBatch; // Supply a getter just to skip dealing with ESM bindings
+
+  const getBatch = () => batch;
+
+  const ReactReduxContext = /*#__PURE__*/React__default.createContext(null);
+
+  {
+    ReactReduxContext.displayName = 'ReactRedux';
+  }
+
+  const notInitialized = () => {
+    throw new Error('uSES not initialized!');
+  };
+
+  function _extends$1() {
+    _extends$1 = Object.assign ? Object.assign.bind() : function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
+
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+
+      return target;
+    };
+    return _extends$1.apply(this, arguments);
+  }
+
+  function _objectWithoutPropertiesLoose(source, excluded) {
+    if (source == null) return {};
+    var target = {};
+    var sourceKeys = Object.keys(source);
+    var key, i;
+
+    for (i = 0; i < sourceKeys.length; i++) {
+      key = sourceKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      target[key] = source[key];
+    }
+
+    return target;
   }
 
   var reactIs_production_min = createCommonjsModule(function (module, exports) {
@@ -1122,1021 +1643,6 @@
     module.exports = reactIs_development;
   }
   });
-  var reactIs_1 = reactIs.isValidElementType;
-  var reactIs_2 = reactIs.isContextConsumer;
-
-  /*
-  object-assign
-  (c) Sindre Sorhus
-  @license MIT
-  */
-  /* eslint-disable no-unused-vars */
-  var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-  var hasOwnProperty = Object.prototype.hasOwnProperty;
-  var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-  function toObject(val) {
-  	if (val === null || val === undefined) {
-  		throw new TypeError('Object.assign cannot be called with null or undefined');
-  	}
-
-  	return Object(val);
-  }
-
-  function shouldUseNative() {
-  	try {
-  		if (!Object.assign) {
-  			return false;
-  		}
-
-  		// Detect buggy property enumeration order in older V8 versions.
-
-  		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
-  		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
-  		test1[5] = 'de';
-  		if (Object.getOwnPropertyNames(test1)[0] === '5') {
-  			return false;
-  		}
-
-  		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
-  		var test2 = {};
-  		for (var i = 0; i < 10; i++) {
-  			test2['_' + String.fromCharCode(i)] = i;
-  		}
-  		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
-  			return test2[n];
-  		});
-  		if (order2.join('') !== '0123456789') {
-  			return false;
-  		}
-
-  		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
-  		var test3 = {};
-  		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
-  			test3[letter] = letter;
-  		});
-  		if (Object.keys(Object.assign({}, test3)).join('') !==
-  				'abcdefghijklmnopqrst') {
-  			return false;
-  		}
-
-  		return true;
-  	} catch (err) {
-  		// We don't expect any of the above to throw, but better to be safe.
-  		return false;
-  	}
-  }
-
-  var objectAssign = shouldUseNative() ? Object.assign : function (target, source) {
-  	var from;
-  	var to = toObject(target);
-  	var symbols;
-
-  	for (var s = 1; s < arguments.length; s++) {
-  		from = Object(arguments[s]);
-
-  		for (var key in from) {
-  			if (hasOwnProperty.call(from, key)) {
-  				to[key] = from[key];
-  			}
-  		}
-
-  		if (getOwnPropertySymbols) {
-  			symbols = getOwnPropertySymbols(from);
-  			for (var i = 0; i < symbols.length; i++) {
-  				if (propIsEnumerable.call(from, symbols[i])) {
-  					to[symbols[i]] = from[symbols[i]];
-  				}
-  			}
-  		}
-  	}
-
-  	return to;
-  };
-
-  /**
-   * Copyright (c) 2013-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-
-  var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
-
-  var ReactPropTypesSecret_1 = ReactPropTypesSecret;
-
-  var printWarning = function() {};
-
-  {
-    var ReactPropTypesSecret$1 = ReactPropTypesSecret_1;
-    var loggedTypeFailures = {};
-    var has = Function.call.bind(Object.prototype.hasOwnProperty);
-
-    printWarning = function(text) {
-      var message = 'Warning: ' + text;
-      if (typeof console !== 'undefined') {
-        console.error(message);
-      }
-      try {
-        // --- Welcome to debugging React ---
-        // This error was thrown as a convenience so that you can use this stack
-        // to find the callsite that caused this warning to fire.
-        throw new Error(message);
-      } catch (x) {}
-    };
-  }
-
-  /**
-   * Assert that the values match with the type specs.
-   * Error messages are memorized and will only be shown once.
-   *
-   * @param {object} typeSpecs Map of name to a ReactPropType
-   * @param {object} values Runtime values that need to be type-checked
-   * @param {string} location e.g. "prop", "context", "child context"
-   * @param {string} componentName Name of the component for error messages.
-   * @param {?Function} getStack Returns the component stack.
-   * @private
-   */
-  function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
-    {
-      for (var typeSpecName in typeSpecs) {
-        if (has(typeSpecs, typeSpecName)) {
-          var error;
-          // Prop type validation may throw. In case they do, we don't want to
-          // fail the render phase where it didn't fail before. So we log it.
-          // After these have been cleaned up, we'll let them throw.
-          try {
-            // This is intentionally an invariant that gets caught. It's the same
-            // behavior as without this statement except with a better message.
-            if (typeof typeSpecs[typeSpecName] !== 'function') {
-              var err = Error(
-                (componentName || 'React class') + ': ' + location + ' type `' + typeSpecName + '` is invalid; ' +
-                'it must be a function, usually from the `prop-types` package, but received `' + typeof typeSpecs[typeSpecName] + '`.'
-              );
-              err.name = 'Invariant Violation';
-              throw err;
-            }
-            error = typeSpecs[typeSpecName](values, typeSpecName, componentName, location, null, ReactPropTypesSecret$1);
-          } catch (ex) {
-            error = ex;
-          }
-          if (error && !(error instanceof Error)) {
-            printWarning(
-              (componentName || 'React class') + ': type specification of ' +
-              location + ' `' + typeSpecName + '` is invalid; the type checker ' +
-              'function must return `null` or an `Error` but returned a ' + typeof error + '. ' +
-              'You may have forgotten to pass an argument to the type checker ' +
-              'creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and ' +
-              'shape all require an argument).'
-            );
-          }
-          if (error instanceof Error && !(error.message in loggedTypeFailures)) {
-            // Only monitor this failure once because there tends to be a lot of the
-            // same error.
-            loggedTypeFailures[error.message] = true;
-
-            var stack = getStack ? getStack() : '';
-
-            printWarning(
-              'Failed ' + location + ' type: ' + error.message + (stack != null ? stack : '')
-            );
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Resets warning cache when testing.
-   *
-   * @private
-   */
-  checkPropTypes.resetWarningCache = function() {
-    {
-      loggedTypeFailures = {};
-    }
-  };
-
-  var checkPropTypes_1 = checkPropTypes;
-
-  var has$1 = Function.call.bind(Object.prototype.hasOwnProperty);
-  var printWarning$1 = function() {};
-
-  {
-    printWarning$1 = function(text) {
-      var message = 'Warning: ' + text;
-      if (typeof console !== 'undefined') {
-        console.error(message);
-      }
-      try {
-        // --- Welcome to debugging React ---
-        // This error was thrown as a convenience so that you can use this stack
-        // to find the callsite that caused this warning to fire.
-        throw new Error(message);
-      } catch (x) {}
-    };
-  }
-
-  function emptyFunctionThatReturnsNull() {
-    return null;
-  }
-
-  var factoryWithTypeCheckers = function(isValidElement, throwOnDirectAccess) {
-    /* global Symbol */
-    var ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
-    var FAUX_ITERATOR_SYMBOL = '@@iterator'; // Before Symbol spec.
-
-    /**
-     * Returns the iterator method function contained on the iterable object.
-     *
-     * Be sure to invoke the function with the iterable as context:
-     *
-     *     var iteratorFn = getIteratorFn(myIterable);
-     *     if (iteratorFn) {
-     *       var iterator = iteratorFn.call(myIterable);
-     *       ...
-     *     }
-     *
-     * @param {?object} maybeIterable
-     * @return {?function}
-     */
-    function getIteratorFn(maybeIterable) {
-      var iteratorFn = maybeIterable && (ITERATOR_SYMBOL && maybeIterable[ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL]);
-      if (typeof iteratorFn === 'function') {
-        return iteratorFn;
-      }
-    }
-
-    /**
-     * Collection of methods that allow declaration and validation of props that are
-     * supplied to React components. Example usage:
-     *
-     *   var Props = require('ReactPropTypes');
-     *   var MyArticle = React.createClass({
-     *     propTypes: {
-     *       // An optional string prop named "description".
-     *       description: Props.string,
-     *
-     *       // A required enum prop named "category".
-     *       category: Props.oneOf(['News','Photos']).isRequired,
-     *
-     *       // A prop named "dialog" that requires an instance of Dialog.
-     *       dialog: Props.instanceOf(Dialog).isRequired
-     *     },
-     *     render: function() { ... }
-     *   });
-     *
-     * A more formal specification of how these methods are used:
-     *
-     *   type := array|bool|func|object|number|string|oneOf([...])|instanceOf(...)
-     *   decl := ReactPropTypes.{type}(.isRequired)?
-     *
-     * Each and every declaration produces a function with the same signature. This
-     * allows the creation of custom validation functions. For example:
-     *
-     *  var MyLink = React.createClass({
-     *    propTypes: {
-     *      // An optional string or URI prop named "href".
-     *      href: function(props, propName, componentName) {
-     *        var propValue = props[propName];
-     *        if (propValue != null && typeof propValue !== 'string' &&
-     *            !(propValue instanceof URI)) {
-     *          return new Error(
-     *            'Expected a string or an URI for ' + propName + ' in ' +
-     *            componentName
-     *          );
-     *        }
-     *      }
-     *    },
-     *    render: function() {...}
-     *  });
-     *
-     * @internal
-     */
-
-    var ANONYMOUS = '<<anonymous>>';
-
-    // Important!
-    // Keep this list in sync with production version in `./factoryWithThrowingShims.js`.
-    var ReactPropTypes = {
-      array: createPrimitiveTypeChecker('array'),
-      bool: createPrimitiveTypeChecker('boolean'),
-      func: createPrimitiveTypeChecker('function'),
-      number: createPrimitiveTypeChecker('number'),
-      object: createPrimitiveTypeChecker('object'),
-      string: createPrimitiveTypeChecker('string'),
-      symbol: createPrimitiveTypeChecker('symbol'),
-
-      any: createAnyTypeChecker(),
-      arrayOf: createArrayOfTypeChecker,
-      element: createElementTypeChecker(),
-      elementType: createElementTypeTypeChecker(),
-      instanceOf: createInstanceTypeChecker,
-      node: createNodeChecker(),
-      objectOf: createObjectOfTypeChecker,
-      oneOf: createEnumTypeChecker,
-      oneOfType: createUnionTypeChecker,
-      shape: createShapeTypeChecker,
-      exact: createStrictShapeTypeChecker,
-    };
-
-    /**
-     * inlined Object.is polyfill to avoid requiring consumers ship their own
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
-     */
-    /*eslint-disable no-self-compare*/
-    function is(x, y) {
-      // SameValue algorithm
-      if (x === y) {
-        // Steps 1-5, 7-10
-        // Steps 6.b-6.e: +0 != -0
-        return x !== 0 || 1 / x === 1 / y;
-      } else {
-        // Step 6.a: NaN == NaN
-        return x !== x && y !== y;
-      }
-    }
-    /*eslint-enable no-self-compare*/
-
-    /**
-     * We use an Error-like object for backward compatibility as people may call
-     * PropTypes directly and inspect their output. However, we don't use real
-     * Errors anymore. We don't inspect their stack anyway, and creating them
-     * is prohibitively expensive if they are created too often, such as what
-     * happens in oneOfType() for any type before the one that matched.
-     */
-    function PropTypeError(message) {
-      this.message = message;
-      this.stack = '';
-    }
-    // Make `instanceof Error` still work for returned errors.
-    PropTypeError.prototype = Error.prototype;
-
-    function createChainableTypeChecker(validate) {
-      {
-        var manualPropTypeCallCache = {};
-        var manualPropTypeWarningCount = 0;
-      }
-      function checkType(isRequired, props, propName, componentName, location, propFullName, secret) {
-        componentName = componentName || ANONYMOUS;
-        propFullName = propFullName || propName;
-
-        if (secret !== ReactPropTypesSecret_1) {
-          if (throwOnDirectAccess) {
-            // New behavior only for users of `prop-types` package
-            var err = new Error(
-              'Calling PropTypes validators directly is not supported by the `prop-types` package. ' +
-              'Use `PropTypes.checkPropTypes()` to call them. ' +
-              'Read more at http://fb.me/use-check-prop-types'
-            );
-            err.name = 'Invariant Violation';
-            throw err;
-          } else if ( typeof console !== 'undefined') {
-            // Old behavior for people using React.PropTypes
-            var cacheKey = componentName + ':' + propName;
-            if (
-              !manualPropTypeCallCache[cacheKey] &&
-              // Avoid spamming the console because they are often not actionable except for lib authors
-              manualPropTypeWarningCount < 3
-            ) {
-              printWarning$1(
-                'You are manually calling a React.PropTypes validation ' +
-                'function for the `' + propFullName + '` prop on `' + componentName  + '`. This is deprecated ' +
-                'and will throw in the standalone `prop-types` package. ' +
-                'You may be seeing this warning due to a third-party PropTypes ' +
-                'library. See https://fb.me/react-warning-dont-call-proptypes ' + 'for details.'
-              );
-              manualPropTypeCallCache[cacheKey] = true;
-              manualPropTypeWarningCount++;
-            }
-          }
-        }
-        if (props[propName] == null) {
-          if (isRequired) {
-            if (props[propName] === null) {
-              return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required ' + ('in `' + componentName + '`, but its value is `null`.'));
-            }
-            return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required in ' + ('`' + componentName + '`, but its value is `undefined`.'));
-          }
-          return null;
-        } else {
-          return validate(props, propName, componentName, location, propFullName);
-        }
-      }
-
-      var chainedCheckType = checkType.bind(null, false);
-      chainedCheckType.isRequired = checkType.bind(null, true);
-
-      return chainedCheckType;
-    }
-
-    function createPrimitiveTypeChecker(expectedType) {
-      function validate(props, propName, componentName, location, propFullName, secret) {
-        var propValue = props[propName];
-        var propType = getPropType(propValue);
-        if (propType !== expectedType) {
-          // `propValue` being instance of, say, date/regexp, pass the 'object'
-          // check, but we can offer a more precise error message here rather than
-          // 'of type `object`'.
-          var preciseType = getPreciseType(propValue);
-
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + preciseType + '` supplied to `' + componentName + '`, expected ') + ('`' + expectedType + '`.'));
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createAnyTypeChecker() {
-      return createChainableTypeChecker(emptyFunctionThatReturnsNull);
-    }
-
-    function createArrayOfTypeChecker(typeChecker) {
-      function validate(props, propName, componentName, location, propFullName) {
-        if (typeof typeChecker !== 'function') {
-          return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside arrayOf.');
-        }
-        var propValue = props[propName];
-        if (!Array.isArray(propValue)) {
-          var propType = getPropType(propValue);
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an array.'));
-        }
-        for (var i = 0; i < propValue.length; i++) {
-          var error = typeChecker(propValue, i, componentName, location, propFullName + '[' + i + ']', ReactPropTypesSecret_1);
-          if (error instanceof Error) {
-            return error;
-          }
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createElementTypeChecker() {
-      function validate(props, propName, componentName, location, propFullName) {
-        var propValue = props[propName];
-        if (!isValidElement(propValue)) {
-          var propType = getPropType(propValue);
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected a single ReactElement.'));
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createElementTypeTypeChecker() {
-      function validate(props, propName, componentName, location, propFullName) {
-        var propValue = props[propName];
-        if (!reactIs.isValidElementType(propValue)) {
-          var propType = getPropType(propValue);
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected a single ReactElement type.'));
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createInstanceTypeChecker(expectedClass) {
-      function validate(props, propName, componentName, location, propFullName) {
-        if (!(props[propName] instanceof expectedClass)) {
-          var expectedClassName = expectedClass.name || ANONYMOUS;
-          var actualClassName = getClassName(props[propName]);
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + actualClassName + '` supplied to `' + componentName + '`, expected ') + ('instance of `' + expectedClassName + '`.'));
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createEnumTypeChecker(expectedValues) {
-      if (!Array.isArray(expectedValues)) {
-        {
-          if (arguments.length > 1) {
-            printWarning$1(
-              'Invalid arguments supplied to oneOf, expected an array, got ' + arguments.length + ' arguments. ' +
-              'A common mistake is to write oneOf(x, y, z) instead of oneOf([x, y, z]).'
-            );
-          } else {
-            printWarning$1('Invalid argument supplied to oneOf, expected an array.');
-          }
-        }
-        return emptyFunctionThatReturnsNull;
-      }
-
-      function validate(props, propName, componentName, location, propFullName) {
-        var propValue = props[propName];
-        for (var i = 0; i < expectedValues.length; i++) {
-          if (is(propValue, expectedValues[i])) {
-            return null;
-          }
-        }
-
-        var valuesString = JSON.stringify(expectedValues, function replacer(key, value) {
-          var type = getPreciseType(value);
-          if (type === 'symbol') {
-            return String(value);
-          }
-          return value;
-        });
-        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of value `' + String(propValue) + '` ' + ('supplied to `' + componentName + '`, expected one of ' + valuesString + '.'));
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createObjectOfTypeChecker(typeChecker) {
-      function validate(props, propName, componentName, location, propFullName) {
-        if (typeof typeChecker !== 'function') {
-          return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside objectOf.');
-        }
-        var propValue = props[propName];
-        var propType = getPropType(propValue);
-        if (propType !== 'object') {
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an object.'));
-        }
-        for (var key in propValue) {
-          if (has$1(propValue, key)) {
-            var error = typeChecker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret_1);
-            if (error instanceof Error) {
-              return error;
-            }
-          }
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createUnionTypeChecker(arrayOfTypeCheckers) {
-      if (!Array.isArray(arrayOfTypeCheckers)) {
-         printWarning$1('Invalid argument supplied to oneOfType, expected an instance of array.') ;
-        return emptyFunctionThatReturnsNull;
-      }
-
-      for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
-        var checker = arrayOfTypeCheckers[i];
-        if (typeof checker !== 'function') {
-          printWarning$1(
-            'Invalid argument supplied to oneOfType. Expected an array of check functions, but ' +
-            'received ' + getPostfixForTypeWarning(checker) + ' at index ' + i + '.'
-          );
-          return emptyFunctionThatReturnsNull;
-        }
-      }
-
-      function validate(props, propName, componentName, location, propFullName) {
-        for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
-          var checker = arrayOfTypeCheckers[i];
-          if (checker(props, propName, componentName, location, propFullName, ReactPropTypesSecret_1) == null) {
-            return null;
-          }
-        }
-
-        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`.'));
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createNodeChecker() {
-      function validate(props, propName, componentName, location, propFullName) {
-        if (!isNode(props[propName])) {
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`, expected a ReactNode.'));
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createShapeTypeChecker(shapeTypes) {
-      function validate(props, propName, componentName, location, propFullName) {
-        var propValue = props[propName];
-        var propType = getPropType(propValue);
-        if (propType !== 'object') {
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
-        }
-        for (var key in shapeTypes) {
-          var checker = shapeTypes[key];
-          if (!checker) {
-            continue;
-          }
-          var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret_1);
-          if (error) {
-            return error;
-          }
-        }
-        return null;
-      }
-      return createChainableTypeChecker(validate);
-    }
-
-    function createStrictShapeTypeChecker(shapeTypes) {
-      function validate(props, propName, componentName, location, propFullName) {
-        var propValue = props[propName];
-        var propType = getPropType(propValue);
-        if (propType !== 'object') {
-          return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
-        }
-        // We need to check all keys in case some are required but missing from
-        // props.
-        var allKeys = objectAssign({}, props[propName], shapeTypes);
-        for (var key in allKeys) {
-          var checker = shapeTypes[key];
-          if (!checker) {
-            return new PropTypeError(
-              'Invalid ' + location + ' `' + propFullName + '` key `' + key + '` supplied to `' + componentName + '`.' +
-              '\nBad object: ' + JSON.stringify(props[propName], null, '  ') +
-              '\nValid keys: ' +  JSON.stringify(Object.keys(shapeTypes), null, '  ')
-            );
-          }
-          var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret_1);
-          if (error) {
-            return error;
-          }
-        }
-        return null;
-      }
-
-      return createChainableTypeChecker(validate);
-    }
-
-    function isNode(propValue) {
-      switch (typeof propValue) {
-        case 'number':
-        case 'string':
-        case 'undefined':
-          return true;
-        case 'boolean':
-          return !propValue;
-        case 'object':
-          if (Array.isArray(propValue)) {
-            return propValue.every(isNode);
-          }
-          if (propValue === null || isValidElement(propValue)) {
-            return true;
-          }
-
-          var iteratorFn = getIteratorFn(propValue);
-          if (iteratorFn) {
-            var iterator = iteratorFn.call(propValue);
-            var step;
-            if (iteratorFn !== propValue.entries) {
-              while (!(step = iterator.next()).done) {
-                if (!isNode(step.value)) {
-                  return false;
-                }
-              }
-            } else {
-              // Iterator will provide entry [k,v] tuples rather than values.
-              while (!(step = iterator.next()).done) {
-                var entry = step.value;
-                if (entry) {
-                  if (!isNode(entry[1])) {
-                    return false;
-                  }
-                }
-              }
-            }
-          } else {
-            return false;
-          }
-
-          return true;
-        default:
-          return false;
-      }
-    }
-
-    function isSymbol(propType, propValue) {
-      // Native Symbol.
-      if (propType === 'symbol') {
-        return true;
-      }
-
-      // falsy value can't be a Symbol
-      if (!propValue) {
-        return false;
-      }
-
-      // 19.4.3.5 Symbol.prototype[@@toStringTag] === 'Symbol'
-      if (propValue['@@toStringTag'] === 'Symbol') {
-        return true;
-      }
-
-      // Fallback for non-spec compliant Symbols which are polyfilled.
-      if (typeof Symbol === 'function' && propValue instanceof Symbol) {
-        return true;
-      }
-
-      return false;
-    }
-
-    // Equivalent of `typeof` but with special handling for array and regexp.
-    function getPropType(propValue) {
-      var propType = typeof propValue;
-      if (Array.isArray(propValue)) {
-        return 'array';
-      }
-      if (propValue instanceof RegExp) {
-        // Old webkits (at least until Android 4.0) return 'function' rather than
-        // 'object' for typeof a RegExp. We'll normalize this here so that /bla/
-        // passes PropTypes.object.
-        return 'object';
-      }
-      if (isSymbol(propType, propValue)) {
-        return 'symbol';
-      }
-      return propType;
-    }
-
-    // This handles more types than `getPropType`. Only used for error messages.
-    // See `createPrimitiveTypeChecker`.
-    function getPreciseType(propValue) {
-      if (typeof propValue === 'undefined' || propValue === null) {
-        return '' + propValue;
-      }
-      var propType = getPropType(propValue);
-      if (propType === 'object') {
-        if (propValue instanceof Date) {
-          return 'date';
-        } else if (propValue instanceof RegExp) {
-          return 'regexp';
-        }
-      }
-      return propType;
-    }
-
-    // Returns a string that is postfixed to a warning about an invalid type.
-    // For example, "undefined" or "of type array"
-    function getPostfixForTypeWarning(value) {
-      var type = getPreciseType(value);
-      switch (type) {
-        case 'array':
-        case 'object':
-          return 'an ' + type;
-        case 'boolean':
-        case 'date':
-        case 'regexp':
-          return 'a ' + type;
-        default:
-          return type;
-      }
-    }
-
-    // Returns class name of the object, if any.
-    function getClassName(propValue) {
-      if (!propValue.constructor || !propValue.constructor.name) {
-        return ANONYMOUS;
-      }
-      return propValue.constructor.name;
-    }
-
-    ReactPropTypes.checkPropTypes = checkPropTypes_1;
-    ReactPropTypes.resetWarningCache = checkPropTypes_1.resetWarningCache;
-    ReactPropTypes.PropTypes = ReactPropTypes;
-
-    return ReactPropTypes;
-  };
-
-  var propTypes = createCommonjsModule(function (module) {
-  /**
-   * Copyright (c) 2013-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-
-  {
-    var ReactIs = reactIs;
-
-    // By explicitly using `prop-types` you are opting into new development behavior.
-    // http://fb.me/prop-types-in-prod
-    var throwOnDirectAccess = true;
-    module.exports = factoryWithTypeCheckers(ReactIs.isElement, throwOnDirectAccess);
-  }
-  });
-
-  var ReactReduxContext =
-  /*#__PURE__*/
-  React__default.createContext(null);
-
-  {
-    ReactReduxContext.displayName = 'ReactRedux';
-  }
-
-  // Default to a dummy "batch" implementation that just runs the callback
-  function defaultNoopBatch(callback) {
-    callback();
-  }
-
-  var batch = defaultNoopBatch; // Allow injecting another batching function later
-
-  var setBatch = function setBatch(newBatch) {
-    return batch = newBatch;
-  }; // Supply a getter just to skip dealing with ESM bindings
-
-  var getBatch = function getBatch() {
-    return batch;
-  };
-
-  // well as nesting subscriptions of descendant components, so that we can ensure the
-  // ancestor components re-render before descendants
-
-  var nullListeners = {
-    notify: function notify() {}
-  };
-
-  function createListenerCollection() {
-    var batch = getBatch();
-    var first = null;
-    var last = null;
-    return {
-      clear: function clear() {
-        first = null;
-        last = null;
-      },
-      notify: function notify() {
-        batch(function () {
-          var listener = first;
-
-          while (listener) {
-            listener.callback();
-            listener = listener.next;
-          }
-        });
-      },
-      get: function get() {
-        var listeners = [];
-        var listener = first;
-
-        while (listener) {
-          listeners.push(listener);
-          listener = listener.next;
-        }
-
-        return listeners;
-      },
-      subscribe: function subscribe(callback) {
-        var isSubscribed = true;
-        var listener = last = {
-          callback: callback,
-          next: null,
-          prev: last
-        };
-
-        if (listener.prev) {
-          listener.prev.next = listener;
-        } else {
-          first = listener;
-        }
-
-        return function unsubscribe() {
-          if (!isSubscribed || first === null) return;
-          isSubscribed = false;
-
-          if (listener.next) {
-            listener.next.prev = listener.prev;
-          } else {
-            last = listener.prev;
-          }
-
-          if (listener.prev) {
-            listener.prev.next = listener.next;
-          } else {
-            first = listener.next;
-          }
-        };
-      }
-    };
-  }
-
-  var Subscription =
-  /*#__PURE__*/
-  function () {
-    function Subscription(store, parentSub) {
-      this.store = store;
-      this.parentSub = parentSub;
-      this.unsubscribe = null;
-      this.listeners = nullListeners;
-      this.handleChangeWrapper = this.handleChangeWrapper.bind(this);
-    }
-
-    var _proto = Subscription.prototype;
-
-    _proto.addNestedSub = function addNestedSub(listener) {
-      this.trySubscribe();
-      return this.listeners.subscribe(listener);
-    };
-
-    _proto.notifyNestedSubs = function notifyNestedSubs() {
-      this.listeners.notify();
-    };
-
-    _proto.handleChangeWrapper = function handleChangeWrapper() {
-      if (this.onStateChange) {
-        this.onStateChange();
-      }
-    };
-
-    _proto.isSubscribed = function isSubscribed() {
-      return Boolean(this.unsubscribe);
-    };
-
-    _proto.trySubscribe = function trySubscribe() {
-      if (!this.unsubscribe) {
-        this.unsubscribe = this.parentSub ? this.parentSub.addNestedSub(this.handleChangeWrapper) : this.store.subscribe(this.handleChangeWrapper);
-        this.listeners = createListenerCollection();
-      }
-    };
-
-    _proto.tryUnsubscribe = function tryUnsubscribe() {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-        this.unsubscribe = null;
-        this.listeners.clear();
-        this.listeners = nullListeners;
-      }
-    };
-
-    return Subscription;
-  }();
-
-  function Provider(_ref) {
-    var store = _ref.store,
-        context = _ref.context,
-        children = _ref.children;
-    var contextValue = React.useMemo(function () {
-      var subscription = new Subscription(store);
-      subscription.onStateChange = subscription.notifyNestedSubs;
-      return {
-        store: store,
-        subscription: subscription
-      };
-    }, [store]);
-    var previousState = React.useMemo(function () {
-      return store.getState();
-    }, [store]);
-    React.useEffect(function () {
-      var subscription = contextValue.subscription;
-      subscription.trySubscribe();
-
-      if (previousState !== store.getState()) {
-        subscription.notifyNestedSubs();
-      }
-
-      return function () {
-        subscription.tryUnsubscribe();
-        subscription.onStateChange = null;
-      };
-    }, [contextValue, previousState]);
-    var Context = context || ReactReduxContext;
-    return React__default.createElement(Context.Provider, {
-      value: contextValue
-    }, children);
-  }
-
-  {
-    Provider.propTypes = {
-      store: propTypes.shape({
-        subscribe: propTypes.func.isRequired,
-        dispatch: propTypes.func.isRequired,
-        getState: propTypes.func.isRequired
-      }),
-      context: propTypes.object,
-      children: propTypes.any
-    };
-  }
-
-  function _extends$1() {
-    _extends$1 = Object.assign || function (target) {
-      for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i];
-
-        for (var key in source) {
-          if (Object.prototype.hasOwnProperty.call(source, key)) {
-            target[key] = source[key];
-          }
-        }
-      }
-
-      return target;
-    };
-
-    return _extends$1.apply(this, arguments);
-  }
-
-  function _objectWithoutPropertiesLoose(source, excluded) {
-    if (source == null) return {};
-    var target = {};
-    var sourceKeys = Object.keys(source);
-    var key, i;
-
-    for (i = 0; i < sourceKeys.length; i++) {
-      key = sourceKeys[i];
-      if (excluded.indexOf(key) >= 0) continue;
-      target[key] = source[key];
-    }
-
-    return target;
-  }
 
   /**
    * Copyright 2015, Yahoo! Inc.
@@ -2195,7 +1701,7 @@
 
   var defineProperty = Object.defineProperty;
   var getOwnPropertyNames = Object.getOwnPropertyNames;
-  var getOwnPropertySymbols$1 = Object.getOwnPropertySymbols;
+  var getOwnPropertySymbols = Object.getOwnPropertySymbols;
   var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
   var getPrototypeOf = Object.getPrototypeOf;
   var objectPrototype = Object.prototype;
@@ -2212,8 +1718,8 @@
 
       var keys = getOwnPropertyNames(sourceComponent);
 
-      if (getOwnPropertySymbols$1) {
-        keys = keys.concat(getOwnPropertySymbols$1(sourceComponent));
+      if (getOwnPropertySymbols) {
+        keys = keys.concat(getOwnPropertySymbols(sourceComponent));
       }
 
       var targetStatics = getStatics(targetComponent);
@@ -2238,421 +1744,254 @@
 
   var hoistNonReactStatics_cjs = hoistNonReactStatics;
 
-  // To get around it, we can conditionally useEffect on the server (no-op) and
-  // useLayoutEffect in the browser. We need useLayoutEffect to ensure the store
-  // subscription callback always has the selector from the latest render commit
-  // available, otherwise a store update may happen between render and the effect,
-  // which may cause missed updates; we also must ensure the store subscription
-  // is created synchronously, otherwise a store update may occur before the
-  // subscription is created and an inconsistent state may be observed
+  var reactIs_development$1 = createCommonjsModule(function (module, exports) {
 
-  var useIsomorphicLayoutEffect = typeof window !== 'undefined' && typeof window.document !== 'undefined' && typeof window.document.createElement !== 'undefined' ? React.useLayoutEffect : React.useEffect;
+  {
+    (function() {
 
-  var EMPTY_ARRAY = [];
-  var NO_SUBSCRIPTION_ARRAY = [null, null];
+  // ATTENTION
+  // When adding new symbols to this file,
+  // Please consider also adding to 'react-devtools-shared/src/backend/ReactSymbols'
+  // The Symbol used to tag the ReactElement-like types.
+  var REACT_ELEMENT_TYPE = Symbol.for('react.element');
+  var REACT_PORTAL_TYPE = Symbol.for('react.portal');
+  var REACT_FRAGMENT_TYPE = Symbol.for('react.fragment');
+  var REACT_STRICT_MODE_TYPE = Symbol.for('react.strict_mode');
+  var REACT_PROFILER_TYPE = Symbol.for('react.profiler');
+  var REACT_PROVIDER_TYPE = Symbol.for('react.provider');
+  var REACT_CONTEXT_TYPE = Symbol.for('react.context');
+  var REACT_SERVER_CONTEXT_TYPE = Symbol.for('react.server_context');
+  var REACT_FORWARD_REF_TYPE = Symbol.for('react.forward_ref');
+  var REACT_SUSPENSE_TYPE = Symbol.for('react.suspense');
+  var REACT_SUSPENSE_LIST_TYPE = Symbol.for('react.suspense_list');
+  var REACT_MEMO_TYPE = Symbol.for('react.memo');
+  var REACT_LAZY_TYPE = Symbol.for('react.lazy');
+  var REACT_OFFSCREEN_TYPE = Symbol.for('react.offscreen');
 
-  var stringifyComponent = function stringifyComponent(Comp) {
-    try {
-      return JSON.stringify(Comp);
-    } catch (err) {
-      return String(Comp);
+  // -----------------------------------------------------------------------------
+
+  var enableScopeAPI = false; // Experimental Create Event Handle API.
+  var enableCacheElement = false;
+  var enableTransitionTracing = false; // No known bugs, but needs performance testing
+
+  var enableLegacyHidden = false; // Enables unstable_avoidThisFallback feature in Fiber
+  // stuff. Intended to enable React core members to more easily debug scheduling
+  // issues in DEV builds.
+
+  var enableDebugTracing = false; // Track which Fiber(s) schedule render work.
+
+  var REACT_MODULE_REFERENCE;
+
+  {
+    REACT_MODULE_REFERENCE = Symbol.for('react.module.reference');
+  }
+
+  function isValidElementType(type) {
+    if (typeof type === 'string' || typeof type === 'function') {
+      return true;
+    } // Note: typeof might be other than 'symbol' or 'number' (e.g. if it's a polyfill).
+
+
+    if (type === REACT_FRAGMENT_TYPE || type === REACT_PROFILER_TYPE || enableDebugTracing  || type === REACT_STRICT_MODE_TYPE || type === REACT_SUSPENSE_TYPE || type === REACT_SUSPENSE_LIST_TYPE || enableLegacyHidden  || type === REACT_OFFSCREEN_TYPE || enableScopeAPI  || enableCacheElement  || enableTransitionTracing ) {
+      return true;
     }
-  };
 
-  function storeStateUpdatesReducer(state, action) {
-    var updateCount = state[1];
-    return [action.payload, updateCount + 1];
-  }
-
-  function useIsomorphicLayoutEffectWithArgs(effectFunc, effectArgs, dependencies) {
-    useIsomorphicLayoutEffect(function () {
-      return effectFunc.apply(void 0, effectArgs);
-    }, dependencies);
-  }
-
-  function captureWrapperProps(lastWrapperProps, lastChildProps, renderIsScheduled, wrapperProps, actualChildProps, childPropsFromStoreUpdate, notifyNestedSubs) {
-    // We want to capture the wrapper props and child props we used for later comparisons
-    lastWrapperProps.current = wrapperProps;
-    lastChildProps.current = actualChildProps;
-    renderIsScheduled.current = false; // If the render was from a store update, clear out that reference and cascade the subscriber update
-
-    if (childPropsFromStoreUpdate.current) {
-      childPropsFromStoreUpdate.current = null;
-      notifyNestedSubs();
+    if (typeof type === 'object' && type !== null) {
+      if (type.$$typeof === REACT_LAZY_TYPE || type.$$typeof === REACT_MEMO_TYPE || type.$$typeof === REACT_PROVIDER_TYPE || type.$$typeof === REACT_CONTEXT_TYPE || type.$$typeof === REACT_FORWARD_REF_TYPE || // This needs to include all possible module reference object
+      // types supported by any Flight configuration anywhere since
+      // we don't know which Flight build this will end up being used
+      // with.
+      type.$$typeof === REACT_MODULE_REFERENCE || type.getModuleId !== undefined) {
+        return true;
+      }
     }
+
+    return false;
   }
 
-  function subscribeUpdates(shouldHandleStateChanges, store, subscription, childPropsSelector, lastWrapperProps, lastChildProps, renderIsScheduled, childPropsFromStoreUpdate, notifyNestedSubs, forceComponentUpdateDispatch) {
-    // If we're not subscribed to the store, nothing to do here
-    if (!shouldHandleStateChanges) return; // Capture values for checking if and when this component unmounts
+  function typeOf(object) {
+    if (typeof object === 'object' && object !== null) {
+      var $$typeof = object.$$typeof;
 
-    var didUnsubscribe = false;
-    var lastThrownError = null; // We'll run this callback every time a store subscription update propagates to this component
+      switch ($$typeof) {
+        case REACT_ELEMENT_TYPE:
+          var type = object.type;
 
-    var checkForUpdates = function checkForUpdates() {
-      if (didUnsubscribe) {
-        // Don't run stale listeners.
-        // Redux doesn't guarantee unsubscriptions happen until next dispatch.
-        return;
-      }
+          switch (type) {
+            case REACT_FRAGMENT_TYPE:
+            case REACT_PROFILER_TYPE:
+            case REACT_STRICT_MODE_TYPE:
+            case REACT_SUSPENSE_TYPE:
+            case REACT_SUSPENSE_LIST_TYPE:
+              return type;
 
-      var latestStoreState = store.getState();
-      var newChildProps, error;
+            default:
+              var $$typeofType = type && type.$$typeof;
 
-      try {
-        // Actually run the selector with the most recent store state and wrapper props
-        // to determine what the child props should be
-        newChildProps = childPropsSelector(latestStoreState, lastWrapperProps.current);
-      } catch (e) {
-        error = e;
-        lastThrownError = e;
-      }
+              switch ($$typeofType) {
+                case REACT_SERVER_CONTEXT_TYPE:
+                case REACT_CONTEXT_TYPE:
+                case REACT_FORWARD_REF_TYPE:
+                case REACT_LAZY_TYPE:
+                case REACT_MEMO_TYPE:
+                case REACT_PROVIDER_TYPE:
+                  return $$typeofType;
 
-      if (!error) {
-        lastThrownError = null;
-      } // If the child props haven't changed, nothing to do here - cascade the subscription update
+                default:
+                  return $$typeof;
+              }
 
-
-      if (newChildProps === lastChildProps.current) {
-        if (!renderIsScheduled.current) {
-          notifyNestedSubs();
-        }
-      } else {
-        // Save references to the new child props.  Note that we track the "child props from store update"
-        // as a ref instead of a useState/useReducer because we need a way to determine if that value has
-        // been processed.  If this went into useState/useReducer, we couldn't clear out the value without
-        // forcing another re-render, which we don't want.
-        lastChildProps.current = newChildProps;
-        childPropsFromStoreUpdate.current = newChildProps;
-        renderIsScheduled.current = true; // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
-
-        forceComponentUpdateDispatch({
-          type: 'STORE_UPDATED',
-          payload: {
-            error: error
           }
-        });
+
+        case REACT_PORTAL_TYPE:
+          return $$typeof;
       }
-    }; // Actually subscribe to the nearest connected ancestor (or store)
-
-
-    subscription.onStateChange = checkForUpdates;
-    subscription.trySubscribe(); // Pull data from the store after first render in case the store has
-    // changed since we began.
-
-    checkForUpdates();
-
-    var unsubscribeWrapper = function unsubscribeWrapper() {
-      didUnsubscribe = true;
-      subscription.tryUnsubscribe();
-      subscription.onStateChange = null;
-
-      if (lastThrownError) {
-        // It's possible that we caught an error due to a bad mapState function, but the
-        // parent re-rendered without this component and we're about to unmount.
-        // This shouldn't happen as long as we do top-down subscriptions correctly, but
-        // if we ever do those wrong, this throw will surface the error in our tests.
-        // In that case, throw the error from here so it doesn't get lost.
-        throw lastThrownError;
-      }
-    };
-
-    return unsubscribeWrapper;
-  }
-
-  var initStateUpdates = function initStateUpdates() {
-    return [null, 0];
-  };
-
-  function connectAdvanced(
-  /*
-    selectorFactory is a func that is responsible for returning the selector function used to
-    compute new props from state, props, and dispatch. For example:
-        export default connectAdvanced((dispatch, options) => (state, props) => ({
-        thing: state.things[props.thingId],
-        saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
-      }))(YourComponent)
-      Access to dispatch is provided to the factory so selectorFactories can bind actionCreators
-    outside of their selector as an optimization. Options passed to connectAdvanced are passed to
-    the selectorFactory, along with displayName and WrappedComponent, as the second argument.
-      Note that selectorFactory is responsible for all caching/memoization of inbound and outbound
-    props. Do not use connectAdvanced directly without memoizing results between calls to your
-    selector, otherwise the Connect component will re-render on every state or props change.
-  */
-  selectorFactory, // options object:
-  _ref) {
-    if (_ref === void 0) {
-      _ref = {};
     }
 
-    var _ref2 = _ref,
-        _ref2$getDisplayName = _ref2.getDisplayName,
-        getDisplayName = _ref2$getDisplayName === void 0 ? function (name) {
-      return "ConnectAdvanced(" + name + ")";
-    } : _ref2$getDisplayName,
-        _ref2$methodName = _ref2.methodName,
-        methodName = _ref2$methodName === void 0 ? 'connectAdvanced' : _ref2$methodName,
-        _ref2$renderCountProp = _ref2.renderCountProp,
-        renderCountProp = _ref2$renderCountProp === void 0 ? undefined : _ref2$renderCountProp,
-        _ref2$shouldHandleSta = _ref2.shouldHandleStateChanges,
-        shouldHandleStateChanges = _ref2$shouldHandleSta === void 0 ? true : _ref2$shouldHandleSta,
-        _ref2$storeKey = _ref2.storeKey,
-        storeKey = _ref2$storeKey === void 0 ? 'store' : _ref2$storeKey,
-        _ref2$withRef = _ref2.withRef,
-        withRef = _ref2$withRef === void 0 ? false : _ref2$withRef,
-        _ref2$forwardRef = _ref2.forwardRef,
-        forwardRef = _ref2$forwardRef === void 0 ? false : _ref2$forwardRef,
-        _ref2$context = _ref2.context,
-        context = _ref2$context === void 0 ? ReactReduxContext : _ref2$context,
-        connectOptions = _objectWithoutPropertiesLoose(_ref2, ["getDisplayName", "methodName", "renderCountProp", "shouldHandleStateChanges", "storeKey", "withRef", "forwardRef", "context"]);
+    return undefined;
+  }
+  var ContextConsumer = REACT_CONTEXT_TYPE;
+  var ContextProvider = REACT_PROVIDER_TYPE;
+  var Element = REACT_ELEMENT_TYPE;
+  var ForwardRef = REACT_FORWARD_REF_TYPE;
+  var Fragment = REACT_FRAGMENT_TYPE;
+  var Lazy = REACT_LAZY_TYPE;
+  var Memo = REACT_MEMO_TYPE;
+  var Portal = REACT_PORTAL_TYPE;
+  var Profiler = REACT_PROFILER_TYPE;
+  var StrictMode = REACT_STRICT_MODE_TYPE;
+  var Suspense = REACT_SUSPENSE_TYPE;
+  var SuspenseList = REACT_SUSPENSE_LIST_TYPE;
+  var hasWarnedAboutDeprecatedIsAsyncMode = false;
+  var hasWarnedAboutDeprecatedIsConcurrentMode = false; // AsyncMode should be deprecated
 
+  function isAsyncMode(object) {
     {
-      if (renderCountProp !== undefined) {
-        throw new Error("renderCountProp is removed. render counting is built into the latest React Dev Tools profiling extension");
-      }
+      if (!hasWarnedAboutDeprecatedIsAsyncMode) {
+        hasWarnedAboutDeprecatedIsAsyncMode = true; // Using console['warn'] to evade Babel and ESLint
 
-      if (withRef) {
-        throw new Error('withRef is removed. To access the wrapped instance, use a ref on the connected component');
-      }
-
-      var customStoreWarningMessage = 'To use a custom Redux store for specific components, create a custom React context with ' + "React.createContext(), and pass the context object to React Redux's Provider and specific components" + ' like: <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' + 'You may also pass a {context : MyContext} option to connect';
-
-      if (storeKey !== 'store') {
-        throw new Error('storeKey has been removed and does not do anything. ' + customStoreWarningMessage);
+        console['warn']('The ReactIs.isAsyncMode() alias has been deprecated, ' + 'and will be removed in React 18+.');
       }
     }
 
-    var Context = context;
-    return function wrapWithConnect(WrappedComponent) {
-      if ( !reactIs_1(WrappedComponent)) {
-        throw new Error("You must pass a component to the function returned by " + (methodName + ". Instead received " + stringifyComponent(WrappedComponent)));
+    return false;
+  }
+  function isConcurrentMode(object) {
+    {
+      if (!hasWarnedAboutDeprecatedIsConcurrentMode) {
+        hasWarnedAboutDeprecatedIsConcurrentMode = true; // Using console['warn'] to evade Babel and ESLint
+
+        console['warn']('The ReactIs.isConcurrentMode() alias has been deprecated, ' + 'and will be removed in React 18+.');
       }
+    }
 
-      var wrappedComponentName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
-      var displayName = getDisplayName(wrappedComponentName);
-
-      var selectorFactoryOptions = _extends$1({}, connectOptions, {
-        getDisplayName: getDisplayName,
-        methodName: methodName,
-        renderCountProp: renderCountProp,
-        shouldHandleStateChanges: shouldHandleStateChanges,
-        storeKey: storeKey,
-        displayName: displayName,
-        wrappedComponentName: wrappedComponentName,
-        WrappedComponent: WrappedComponent
-      });
-
-      var pure = connectOptions.pure;
-
-      function createChildSelector(store) {
-        return selectorFactory(store.dispatch, selectorFactoryOptions);
-      } // If we aren't running in "pure" mode, we don't want to memoize values.
-      // To avoid conditionally calling hooks, we fall back to a tiny wrapper
-      // that just executes the given callback immediately.
-
-
-      var usePureOnlyMemo = pure ? React.useMemo : function (callback) {
-        return callback();
-      };
-
-      function ConnectFunction(props) {
-        var _useMemo = React.useMemo(function () {
-          // Distinguish between actual "data" props that were passed to the wrapper component,
-          // and values needed to control behavior (forwarded refs, alternate context instances).
-          // To maintain the wrapperProps object reference, memoize this destructuring.
-          var forwardedRef = props.forwardedRef,
-              wrapperProps = _objectWithoutPropertiesLoose(props, ["forwardedRef"]);
-
-          return [props.context, forwardedRef, wrapperProps];
-        }, [props]),
-            propsContext = _useMemo[0],
-            forwardedRef = _useMemo[1],
-            wrapperProps = _useMemo[2];
-
-        var ContextToUse = React.useMemo(function () {
-          // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
-          // Memoize the check that determines which context instance we should use.
-          return propsContext && propsContext.Consumer && reactIs_2(React__default.createElement(propsContext.Consumer, null)) ? propsContext : Context;
-        }, [propsContext, Context]); // Retrieve the store and ancestor subscription via context, if available
-
-        var contextValue = React.useContext(ContextToUse); // The store _must_ exist as either a prop or in context.
-        // We'll check to see if it _looks_ like a Redux store first.
-        // This allows us to pass through a `store` prop that is just a plain value.
-
-        var didStoreComeFromProps = Boolean(props.store) && Boolean(props.store.getState) && Boolean(props.store.dispatch);
-        var didStoreComeFromContext = Boolean(contextValue) && Boolean(contextValue.store);
-
-        if ( !didStoreComeFromProps && !didStoreComeFromContext) {
-          throw new Error("Could not find \"store\" in the context of " + ("\"" + displayName + "\". Either wrap the root component in a <Provider>, ") + "or pass a custom React context provider to <Provider> and the corresponding " + ("React context consumer to " + displayName + " in connect options."));
-        } // Based on the previous check, one of these must be true
-
-
-        var store = didStoreComeFromProps ? props.store : contextValue.store;
-        var childPropsSelector = React.useMemo(function () {
-          // The child props selector needs the store reference as an input.
-          // Re-create this selector whenever the store changes.
-          return createChildSelector(store);
-        }, [store]);
-
-        var _useMemo2 = React.useMemo(function () {
-          if (!shouldHandleStateChanges) return NO_SUBSCRIPTION_ARRAY; // This Subscription's source should match where store came from: props vs. context. A component
-          // connected to the store via props shouldn't use subscription from context, or vice versa.
-
-          var subscription = new Subscription(store, didStoreComeFromProps ? null : contextValue.subscription); // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
-          // the middle of the notification loop, where `subscription` will then be null. This can
-          // probably be avoided if Subscription's listeners logic is changed to not call listeners
-          // that have been unsubscribed in the  middle of the notification loop.
-
-          var notifyNestedSubs = subscription.notifyNestedSubs.bind(subscription);
-          return [subscription, notifyNestedSubs];
-        }, [store, didStoreComeFromProps, contextValue]),
-            subscription = _useMemo2[0],
-            notifyNestedSubs = _useMemo2[1]; // Determine what {store, subscription} value should be put into nested context, if necessary,
-        // and memoize that value to avoid unnecessary context updates.
-
-
-        var overriddenContextValue = React.useMemo(function () {
-          if (didStoreComeFromProps) {
-            // This component is directly subscribed to a store from props.
-            // We don't want descendants reading from this store - pass down whatever
-            // the existing context value is from the nearest connected ancestor.
-            return contextValue;
-          } // Otherwise, put this component's subscription instance into context, so that
-          // connected descendants won't update until after this component is done
-
-
-          return _extends$1({}, contextValue, {
-            subscription: subscription
-          });
-        }, [didStoreComeFromProps, contextValue, subscription]); // We need to force this wrapper component to re-render whenever a Redux store update
-        // causes a change to the calculated child component props (or we caught an error in mapState)
-
-        var _useReducer = React.useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates),
-            _useReducer$ = _useReducer[0],
-            previousStateUpdateResult = _useReducer$[0],
-            forceComponentUpdateDispatch = _useReducer[1]; // Propagate any mapState/mapDispatch errors upwards
-
-
-        if (previousStateUpdateResult && previousStateUpdateResult.error) {
-          throw previousStateUpdateResult.error;
-        } // Set up refs to coordinate values between the subscription effect and the render logic
-
-
-        var lastChildProps = React.useRef();
-        var lastWrapperProps = React.useRef(wrapperProps);
-        var childPropsFromStoreUpdate = React.useRef();
-        var renderIsScheduled = React.useRef(false);
-        var actualChildProps = usePureOnlyMemo(function () {
-          // Tricky logic here:
-          // - This render may have been triggered by a Redux store update that produced new child props
-          // - However, we may have gotten new wrapper props after that
-          // If we have new child props, and the same wrapper props, we know we should use the new child props as-is.
-          // But, if we have new wrapper props, those might change the child props, so we have to recalculate things.
-          // So, we'll use the child props from store update only if the wrapper props are the same as last time.
-          if (childPropsFromStoreUpdate.current && wrapperProps === lastWrapperProps.current) {
-            return childPropsFromStoreUpdate.current;
-          } // TODO We're reading the store directly in render() here. Bad idea?
-          // This will likely cause Bad Things (TM) to happen in Concurrent Mode.
-          // Note that we do this because on renders _not_ caused by store updates, we need the latest store state
-          // to determine what the child props should be.
-
-
-          return childPropsSelector(store.getState(), wrapperProps);
-        }, [store, previousStateUpdateResult, wrapperProps]); // We need this to execute synchronously every time we re-render. However, React warns
-        // about useLayoutEffect in SSR, so we try to detect environment and fall back to
-        // just useEffect instead to avoid the warning, since neither will run anyway.
-
-        useIsomorphicLayoutEffectWithArgs(captureWrapperProps, [lastWrapperProps, lastChildProps, renderIsScheduled, wrapperProps, actualChildProps, childPropsFromStoreUpdate, notifyNestedSubs]); // Our re-subscribe logic only runs when the store/subscription setup changes
-
-        useIsomorphicLayoutEffectWithArgs(subscribeUpdates, [shouldHandleStateChanges, store, subscription, childPropsSelector, lastWrapperProps, lastChildProps, renderIsScheduled, childPropsFromStoreUpdate, notifyNestedSubs, forceComponentUpdateDispatch], [store, subscription, childPropsSelector]); // Now that all that's done, we can finally try to actually render the child component.
-        // We memoize the elements for the rendered child component as an optimization.
-
-        var renderedWrappedComponent = React.useMemo(function () {
-          return React__default.createElement(WrappedComponent, _extends$1({}, actualChildProps, {
-            ref: forwardedRef
-          }));
-        }, [forwardedRef, WrappedComponent, actualChildProps]); // If React sees the exact same element reference as last time, it bails out of re-rendering
-        // that child, same as if it was wrapped in React.memo() or returned false from shouldComponentUpdate.
-
-        var renderedChild = React.useMemo(function () {
-          if (shouldHandleStateChanges) {
-            // If this component is subscribed to store updates, we need to pass its own
-            // subscription instance down to our descendants. That means rendering the same
-            // Context instance, and putting a different value into the context.
-            return React__default.createElement(ContextToUse.Provider, {
-              value: overriddenContextValue
-            }, renderedWrappedComponent);
-          }
-
-          return renderedWrappedComponent;
-        }, [ContextToUse, renderedWrappedComponent, overriddenContextValue]);
-        return renderedChild;
-      } // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
-
-
-      var Connect = pure ? React__default.memo(ConnectFunction) : ConnectFunction;
-      Connect.WrappedComponent = WrappedComponent;
-      Connect.displayName = displayName;
-
-      if (forwardRef) {
-        var forwarded = React__default.forwardRef(function forwardConnectRef(props, ref) {
-          return React__default.createElement(Connect, _extends$1({}, props, {
-            forwardedRef: ref
-          }));
-        });
-        forwarded.displayName = displayName;
-        forwarded.WrappedComponent = WrappedComponent;
-        return hoistNonReactStatics_cjs(forwarded, WrappedComponent);
-      }
-
-      return hoistNonReactStatics_cjs(Connect, WrappedComponent);
-    };
+    return false;
+  }
+  function isContextConsumer(object) {
+    return typeOf(object) === REACT_CONTEXT_TYPE;
+  }
+  function isContextProvider(object) {
+    return typeOf(object) === REACT_PROVIDER_TYPE;
+  }
+  function isElement(object) {
+    return typeof object === 'object' && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
+  }
+  function isForwardRef(object) {
+    return typeOf(object) === REACT_FORWARD_REF_TYPE;
+  }
+  function isFragment(object) {
+    return typeOf(object) === REACT_FRAGMENT_TYPE;
+  }
+  function isLazy(object) {
+    return typeOf(object) === REACT_LAZY_TYPE;
+  }
+  function isMemo(object) {
+    return typeOf(object) === REACT_MEMO_TYPE;
+  }
+  function isPortal(object) {
+    return typeOf(object) === REACT_PORTAL_TYPE;
+  }
+  function isProfiler(object) {
+    return typeOf(object) === REACT_PROFILER_TYPE;
+  }
+  function isStrictMode(object) {
+    return typeOf(object) === REACT_STRICT_MODE_TYPE;
+  }
+  function isSuspense(object) {
+    return typeOf(object) === REACT_SUSPENSE_TYPE;
+  }
+  function isSuspenseList(object) {
+    return typeOf(object) === REACT_SUSPENSE_LIST_TYPE;
   }
 
-  function is(x, y) {
-    if (x === y) {
-      return x !== 0 || y !== 0 || 1 / x === 1 / y;
-    } else {
-      return x !== x && y !== y;
-    }
+  exports.ContextConsumer = ContextConsumer;
+  exports.ContextProvider = ContextProvider;
+  exports.Element = Element;
+  exports.ForwardRef = ForwardRef;
+  exports.Fragment = Fragment;
+  exports.Lazy = Lazy;
+  exports.Memo = Memo;
+  exports.Portal = Portal;
+  exports.Profiler = Profiler;
+  exports.StrictMode = StrictMode;
+  exports.Suspense = Suspense;
+  exports.SuspenseList = SuspenseList;
+  exports.isAsyncMode = isAsyncMode;
+  exports.isConcurrentMode = isConcurrentMode;
+  exports.isContextConsumer = isContextConsumer;
+  exports.isContextProvider = isContextProvider;
+  exports.isElement = isElement;
+  exports.isForwardRef = isForwardRef;
+  exports.isFragment = isFragment;
+  exports.isLazy = isLazy;
+  exports.isMemo = isMemo;
+  exports.isPortal = isPortal;
+  exports.isProfiler = isProfiler;
+  exports.isStrictMode = isStrictMode;
+  exports.isSuspense = isSuspense;
+  exports.isSuspenseList = isSuspenseList;
+  exports.isValidElementType = isValidElementType;
+  exports.typeOf = typeOf;
+    })();
   }
+  });
+  var reactIs_development_1$1 = reactIs_development$1.ContextConsumer;
+  var reactIs_development_2$1 = reactIs_development$1.ContextProvider;
+  var reactIs_development_3$1 = reactIs_development$1.Element;
+  var reactIs_development_4$1 = reactIs_development$1.ForwardRef;
+  var reactIs_development_5$1 = reactIs_development$1.Fragment;
+  var reactIs_development_6$1 = reactIs_development$1.Lazy;
+  var reactIs_development_7$1 = reactIs_development$1.Memo;
+  var reactIs_development_8$1 = reactIs_development$1.Portal;
+  var reactIs_development_9$1 = reactIs_development$1.Profiler;
+  var reactIs_development_10$1 = reactIs_development$1.StrictMode;
+  var reactIs_development_11$1 = reactIs_development$1.Suspense;
+  var reactIs_development_12$1 = reactIs_development$1.SuspenseList;
+  var reactIs_development_13$1 = reactIs_development$1.isAsyncMode;
+  var reactIs_development_14$1 = reactIs_development$1.isConcurrentMode;
+  var reactIs_development_15$1 = reactIs_development$1.isContextConsumer;
+  var reactIs_development_16$1 = reactIs_development$1.isContextProvider;
+  var reactIs_development_17$1 = reactIs_development$1.isElement;
+  var reactIs_development_18$1 = reactIs_development$1.isForwardRef;
+  var reactIs_development_19$1 = reactIs_development$1.isFragment;
+  var reactIs_development_20$1 = reactIs_development$1.isLazy;
+  var reactIs_development_21$1 = reactIs_development$1.isMemo;
+  var reactIs_development_22$1 = reactIs_development$1.isPortal;
+  var reactIs_development_23$1 = reactIs_development$1.isProfiler;
+  var reactIs_development_24$1 = reactIs_development$1.isStrictMode;
+  var reactIs_development_25$1 = reactIs_development$1.isSuspense;
+  var reactIs_development_26$1 = reactIs_development$1.isSuspenseList;
+  var reactIs_development_27$1 = reactIs_development$1.isValidElementType;
+  var reactIs_development_28$1 = reactIs_development$1.typeOf;
 
-  function shallowEqual(objA, objB) {
-    if (is(objA, objB)) return true;
+  var reactIs$1 = createCommonjsModule(function (module) {
 
-    if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
-      return false;
-    }
-
-    var keysA = Object.keys(objA);
-    var keysB = Object.keys(objB);
-    if (keysA.length !== keysB.length) return false;
-
-    for (var i = 0; i < keysA.length; i++) {
-      if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
-        return false;
-      }
-    }
-
-    return true;
+  {
+    module.exports = reactIs_development$1;
   }
-
-  /**
-   * @param {any} obj The object to inspect.
-   * @returns {boolean} True if the argument appears to be a plain object.
-   */
-  function isPlainObject$1(obj) {
-    if (typeof obj !== 'object' || obj === null) return false;
-    var proto = Object.getPrototypeOf(obj);
-    if (proto === null) return true;
-    var baseProto = proto;
-
-    while (Object.getPrototypeOf(baseProto) !== null) {
-      baseProto = Object.getPrototypeOf(baseProto);
-    }
-
-    return proto === baseProto;
-  }
+  });
+  var reactIs_1 = reactIs$1.isValidElementType;
+  var reactIs_2 = reactIs$1.isContextConsumer;
 
   /**
    * Prints a warning in the console if it exists.
@@ -2679,169 +2018,34 @@
 
   }
 
-  function verifyPlainObject(value, displayName, methodName) {
-    if (!isPlainObject$1(value)) {
-      warning$2(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
-    }
-  }
-
-  function wrapMapToPropsConstant(getConstant) {
-    return function initConstantSelector(dispatch, options) {
-      var constant = getConstant(dispatch, options);
-
-      function constantSelector() {
-        return constant;
-      }
-
-      constantSelector.dependsOnOwnProps = false;
-      return constantSelector;
-    };
-  } // dependsOnOwnProps is used by createMapToPropsProxy to determine whether to pass props as args
-  // to the mapToProps function being wrapped. It is also used by makePurePropsSelector to determine
-  // whether mapToProps needs to be invoked when props have changed.
-  //
-  // A length of one signals that mapToProps does not depend on props from the parent component.
-  // A length of zero is assumed to mean mapToProps is getting args via arguments or ...args and
-  // therefore not reporting its length accurately..
-
-  function getDependsOnOwnProps(mapToProps) {
-    return mapToProps.dependsOnOwnProps !== null && mapToProps.dependsOnOwnProps !== undefined ? Boolean(mapToProps.dependsOnOwnProps) : mapToProps.length !== 1;
-  } // Used by whenMapStateToPropsIsFunction and whenMapDispatchToPropsIsFunction,
-  // this function wraps mapToProps in a proxy function which does several things:
-  //
-  //  * Detects whether the mapToProps function being called depends on props, which
-  //    is used by selectorFactory to decide if it should reinvoke on props changes.
-  //
-  //  * On first call, handles mapToProps if returns another function, and treats that
-  //    new function as the true mapToProps for subsequent calls.
-  //
-  //  * On first call, verifies the first result is a plain object, in order to warn
-  //    the developer that their mapToProps function is not returning a valid result.
-  //
-
-  function wrapMapToPropsFunc(mapToProps, methodName) {
-    return function initProxySelector(dispatch, _ref) {
-      var displayName = _ref.displayName;
-
-      var proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
-        return proxy.dependsOnOwnProps ? proxy.mapToProps(stateOrDispatch, ownProps) : proxy.mapToProps(stateOrDispatch);
-      }; // allow detectFactoryAndVerify to get ownProps
-
-
-      proxy.dependsOnOwnProps = true;
-
-      proxy.mapToProps = function detectFactoryAndVerify(stateOrDispatch, ownProps) {
-        proxy.mapToProps = mapToProps;
-        proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps);
-        var props = proxy(stateOrDispatch, ownProps);
-
-        if (typeof props === 'function') {
-          proxy.mapToProps = props;
-          proxy.dependsOnOwnProps = getDependsOnOwnProps(props);
-          props = proxy(stateOrDispatch, ownProps);
-        }
-
-        verifyPlainObject(props, displayName, methodName);
-        return props;
-      };
-
-      return proxy;
-    };
-  }
-
-  function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
-    return typeof mapDispatchToProps === 'function' ? wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps') : undefined;
-  }
-  function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
-    return !mapDispatchToProps ? wrapMapToPropsConstant(function (dispatch) {
-      return {
-        dispatch: dispatch
-      };
-    }) : undefined;
-  }
-  function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
-    return mapDispatchToProps && typeof mapDispatchToProps === 'object' ? wrapMapToPropsConstant(function (dispatch) {
-      return bindActionCreators(mapDispatchToProps, dispatch);
-    }) : undefined;
-  }
-  var defaultMapDispatchToPropsFactories = [whenMapDispatchToPropsIsFunction, whenMapDispatchToPropsIsMissing, whenMapDispatchToPropsIsObject];
-
-  function whenMapStateToPropsIsFunction(mapStateToProps) {
-    return typeof mapStateToProps === 'function' ? wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps') : undefined;
-  }
-  function whenMapStateToPropsIsMissing(mapStateToProps) {
-    return !mapStateToProps ? wrapMapToPropsConstant(function () {
-      return {};
-    }) : undefined;
-  }
-  var defaultMapStateToPropsFactories = [whenMapStateToPropsIsFunction, whenMapStateToPropsIsMissing];
-
-  function defaultMergeProps(stateProps, dispatchProps, ownProps) {
-    return _extends$1({}, ownProps, {}, stateProps, {}, dispatchProps);
-  }
-  function wrapMergePropsFunc(mergeProps) {
-    return function initMergePropsProxy(dispatch, _ref) {
-      var displayName = _ref.displayName,
-          pure = _ref.pure,
-          areMergedPropsEqual = _ref.areMergedPropsEqual;
-      var hasRunOnce = false;
-      var mergedProps;
-      return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
-        var nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps);
-
-        if (hasRunOnce) {
-          if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps)) mergedProps = nextMergedProps;
-        } else {
-          hasRunOnce = true;
-          mergedProps = nextMergedProps;
-          verifyPlainObject(mergedProps, displayName, 'mergeProps');
-        }
-
-        return mergedProps;
-      };
-    };
-  }
-  function whenMergePropsIsFunction(mergeProps) {
-    return typeof mergeProps === 'function' ? wrapMergePropsFunc(mergeProps) : undefined;
-  }
-  function whenMergePropsIsOmitted(mergeProps) {
-    return !mergeProps ? function () {
-      return defaultMergeProps;
-    } : undefined;
-  }
-  var defaultMergePropsFactories = [whenMergePropsIsFunction, whenMergePropsIsOmitted];
-
-  function verify(selector, methodName, displayName) {
+  function verify(selector, methodName) {
     if (!selector) {
-      throw new Error("Unexpected value for " + methodName + " in " + displayName + ".");
+      throw new Error(`Unexpected value for ${methodName} in connect.`);
     } else if (methodName === 'mapStateToProps' || methodName === 'mapDispatchToProps') {
       if (!Object.prototype.hasOwnProperty.call(selector, 'dependsOnOwnProps')) {
-        warning$2("The selector for " + methodName + " of " + displayName + " did not specify a value for dependsOnOwnProps.");
+        warning$2(`The selector for ${methodName} of connect did not specify a value for dependsOnOwnProps.`);
       }
     }
   }
 
-  function verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, displayName) {
-    verify(mapStateToProps, 'mapStateToProps', displayName);
-    verify(mapDispatchToProps, 'mapDispatchToProps', displayName);
-    verify(mergeProps, 'mergeProps', displayName);
+  function verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps) {
+    verify(mapStateToProps, 'mapStateToProps');
+    verify(mapDispatchToProps, 'mapDispatchToProps');
+    verify(mergeProps, 'mergeProps');
   }
 
-  function impureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch) {
-    return function impureFinalPropsSelector(state, ownProps) {
-      return mergeProps(mapStateToProps(state, ownProps), mapDispatchToProps(dispatch, ownProps), ownProps);
-    };
-  }
-  function pureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, _ref) {
-    var areStatesEqual = _ref.areStatesEqual,
-        areOwnPropsEqual = _ref.areOwnPropsEqual,
-        areStatePropsEqual = _ref.areStatePropsEqual;
-    var hasRunAtLeastOnce = false;
-    var state;
-    var ownProps;
-    var stateProps;
-    var dispatchProps;
-    var mergedProps;
+  const _excluded = ["initMapStateToProps", "initMapDispatchToProps", "initMergeProps"];
+  function pureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, {
+    areStatesEqual,
+    areOwnPropsEqual,
+    areStatePropsEqual
+  }) {
+    let hasRunAtLeastOnce = false;
+    let state;
+    let ownProps;
+    let stateProps;
+    let dispatchProps;
+    let mergedProps;
 
     function handleFirstCall(firstState, firstOwnProps) {
       state = firstState;
@@ -2868,16 +2072,16 @@
     }
 
     function handleNewState() {
-      var nextStateProps = mapStateToProps(state, ownProps);
-      var statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps);
+      const nextStateProps = mapStateToProps(state, ownProps);
+      const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps);
       stateProps = nextStateProps;
       if (statePropsChanged) mergedProps = mergeProps(stateProps, dispatchProps, ownProps);
       return mergedProps;
     }
 
     function handleSubsequentCalls(nextState, nextOwnProps) {
-      var propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps);
-      var stateChanged = !areStatesEqual(nextState, state);
+      const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps);
+      const stateChanged = !areStatesEqual(nextState, state);
       state = nextState;
       ownProps = nextOwnProps;
       if (propsChanged && stateChanged) return handleNewPropsAndNewState();
@@ -2889,131 +2093,346 @@
     return function pureFinalPropsSelector(nextState, nextOwnProps) {
       return hasRunAtLeastOnce ? handleSubsequentCalls(nextState, nextOwnProps) : handleFirstCall(nextState, nextOwnProps);
     };
-  } // TODO: Add more comments
-  // If pure is true, the selector returned by selectorFactory will memoize its results,
-  // allowing connectAdvanced's shouldComponentUpdate to return false if final
-  // props have not changed. If false, the selector will always return a new
-  // object and shouldComponentUpdate will always return true.
+  }
+  // TODO: Add more comments
+  // The selector returned by selectorFactory will memoize its results,
+  // allowing connect's shouldComponentUpdate to return false if final
+  // props have not changed.
+  function finalPropsSelectorFactory(dispatch, _ref) {
+    let {
+      initMapStateToProps,
+      initMapDispatchToProps,
+      initMergeProps
+    } = _ref,
+        options = _objectWithoutPropertiesLoose(_ref, _excluded);
 
-  function finalPropsSelectorFactory(dispatch, _ref2) {
-    var initMapStateToProps = _ref2.initMapStateToProps,
-        initMapDispatchToProps = _ref2.initMapDispatchToProps,
-        initMergeProps = _ref2.initMergeProps,
-        options = _objectWithoutPropertiesLoose(_ref2, ["initMapStateToProps", "initMapDispatchToProps", "initMergeProps"]);
-
-    var mapStateToProps = initMapStateToProps(dispatch, options);
-    var mapDispatchToProps = initMapDispatchToProps(dispatch, options);
-    var mergeProps = initMergeProps(dispatch, options);
+    const mapStateToProps = initMapStateToProps(dispatch, options);
+    const mapDispatchToProps = initMapDispatchToProps(dispatch, options);
+    const mergeProps = initMergeProps(dispatch, options);
 
     {
-      verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName);
+      verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps);
     }
 
-    var selectorFactory = options.pure ? pureFinalPropsSelectorFactory : impureFinalPropsSelectorFactory;
-    return selectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, options);
+    return pureFinalPropsSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, options);
   }
 
-  /*
-    connect is a facade over connectAdvanced. It turns its args into a compatible
-    selectorFactory, which has the signature:
+  function bindActionCreators$1(actionCreators, dispatch) {
+    const boundActionCreators = {};
 
-      (dispatch, options) => (nextState, nextOwnProps) => nextFinalProps
-    
-    connect passes its args to connectAdvanced as options, which will in turn pass them to
-    selectorFactory each time a Connect component instance is instantiated or hot reloaded.
+    for (const key in actionCreators) {
+      const actionCreator = actionCreators[key];
 
-    selectorFactory returns a final props selector from its mapStateToProps,
-    mapStateToPropsFactories, mapDispatchToProps, mapDispatchToPropsFactories, mergeProps,
-    mergePropsFactories, and pure args.
+      if (typeof actionCreator === 'function') {
+        boundActionCreators[key] = (...args) => dispatch(actionCreator(...args));
+      }
+    }
 
-    The resulting final props selector is called by the Connect component instance whenever
-    it receives new props or store state.
+    return boundActionCreators;
+  }
+
+  /**
+   * @param {any} obj The object to inspect.
+   * @returns {boolean} True if the argument appears to be a plain object.
    */
+  function isPlainObject$1(obj) {
+    if (typeof obj !== 'object' || obj === null) return false;
+    let proto = Object.getPrototypeOf(obj);
+    if (proto === null) return true;
+    let baseProto = proto;
 
-  function match(arg, factories, name) {
-    for (var i = factories.length - 1; i >= 0; i--) {
-      var result = factories[i](arg);
-      if (result) return result;
+    while (Object.getPrototypeOf(baseProto) !== null) {
+      baseProto = Object.getPrototypeOf(baseProto);
     }
 
-    return function (dispatch, options) {
-      throw new Error("Invalid value of type " + typeof arg + " for " + name + " argument when connecting component " + options.wrappedComponentName + ".");
-    };
+    return proto === baseProto;
   }
 
-  function strictEqual(a, b) {
-    return a === b;
-  } // createConnect with default args builds the 'official' connect behavior. Calling it with
-  // different options opens up some testing and extensibility scenarios
+  function verifyPlainObject(value, displayName, methodName) {
+    if (!isPlainObject$1(value)) {
+      warning$2(`${methodName}() in ${displayName} must return a plain object. Instead received ${value}.`);
+    }
+  }
 
+  function wrapMapToPropsConstant( // * Note:
+  //  It seems that the dispatch argument
+  //  could be a dispatch function in some cases (ex: whenMapDispatchToPropsIsMissing)
+  //  and a state object in some others (ex: whenMapStateToPropsIsMissing)
+  // eslint-disable-next-line no-unused-vars
+  getConstant) {
+    return function initConstantSelector(dispatch) {
+      const constant = getConstant(dispatch);
 
-  function createConnect(_temp) {
-    var _ref = _temp === void 0 ? {} : _temp,
-        _ref$connectHOC = _ref.connectHOC,
-        connectHOC = _ref$connectHOC === void 0 ? connectAdvanced : _ref$connectHOC,
-        _ref$mapStateToPropsF = _ref.mapStateToPropsFactories,
-        mapStateToPropsFactories = _ref$mapStateToPropsF === void 0 ? defaultMapStateToPropsFactories : _ref$mapStateToPropsF,
-        _ref$mapDispatchToPro = _ref.mapDispatchToPropsFactories,
-        mapDispatchToPropsFactories = _ref$mapDispatchToPro === void 0 ? defaultMapDispatchToPropsFactories : _ref$mapDispatchToPro,
-        _ref$mergePropsFactor = _ref.mergePropsFactories,
-        mergePropsFactories = _ref$mergePropsFactor === void 0 ? defaultMergePropsFactories : _ref$mergePropsFactor,
-        _ref$selectorFactory = _ref.selectorFactory,
-        selectorFactory = _ref$selectorFactory === void 0 ? finalPropsSelectorFactory : _ref$selectorFactory;
-
-    return function connect(mapStateToProps, mapDispatchToProps, mergeProps, _ref2) {
-      if (_ref2 === void 0) {
-        _ref2 = {};
+      function constantSelector() {
+        return constant;
       }
 
-      var _ref3 = _ref2,
-          _ref3$pure = _ref3.pure,
-          pure = _ref3$pure === void 0 ? true : _ref3$pure,
-          _ref3$areStatesEqual = _ref3.areStatesEqual,
-          areStatesEqual = _ref3$areStatesEqual === void 0 ? strictEqual : _ref3$areStatesEqual,
-          _ref3$areOwnPropsEqua = _ref3.areOwnPropsEqual,
-          areOwnPropsEqual = _ref3$areOwnPropsEqua === void 0 ? shallowEqual : _ref3$areOwnPropsEqua,
-          _ref3$areStatePropsEq = _ref3.areStatePropsEqual,
-          areStatePropsEqual = _ref3$areStatePropsEq === void 0 ? shallowEqual : _ref3$areStatePropsEq,
-          _ref3$areMergedPropsE = _ref3.areMergedPropsEqual,
-          areMergedPropsEqual = _ref3$areMergedPropsE === void 0 ? shallowEqual : _ref3$areMergedPropsE,
-          extraOptions = _objectWithoutPropertiesLoose(_ref3, ["pure", "areStatesEqual", "areOwnPropsEqual", "areStatePropsEqual", "areMergedPropsEqual"]);
+      constantSelector.dependsOnOwnProps = false;
+      return constantSelector;
+    };
+  } // dependsOnOwnProps is used by createMapToPropsProxy to determine whether to pass props as args
+  // to the mapToProps function being wrapped. It is also used by makePurePropsSelector to determine
+  // whether mapToProps needs to be invoked when props have changed.
+  //
+  // A length of one signals that mapToProps does not depend on props from the parent component.
+  // A length of zero is assumed to mean mapToProps is getting args via arguments or ...args and
+  // therefore not reporting its length accurately..
+  // TODO Can this get pulled out so that we can subscribe directly to the store if we don't need ownProps?
 
-      var initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories, 'mapStateToProps');
-      var initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories, 'mapDispatchToProps');
-      var initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps');
-      return connectHOC(selectorFactory, _extends$1({
-        // used in error messages
-        methodName: 'connect',
-        // used to compute Connect's displayName from the wrapped component's displayName.
-        getDisplayName: function getDisplayName(name) {
-          return "Connect(" + name + ")";
-        },
-        // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
-        shouldHandleStateChanges: Boolean(mapStateToProps),
-        // passed through to selectorFactory
-        initMapStateToProps: initMapStateToProps,
-        initMapDispatchToProps: initMapDispatchToProps,
-        initMergeProps: initMergeProps,
-        pure: pure,
-        areStatesEqual: areStatesEqual,
-        areOwnPropsEqual: areOwnPropsEqual,
-        areStatePropsEqual: areStatePropsEqual,
-        areMergedPropsEqual: areMergedPropsEqual
-      }, extraOptions));
+  function getDependsOnOwnProps(mapToProps) {
+    return mapToProps.dependsOnOwnProps ? Boolean(mapToProps.dependsOnOwnProps) : mapToProps.length !== 1;
+  } // Used by whenMapStateToPropsIsFunction and whenMapDispatchToPropsIsFunction,
+  // this function wraps mapToProps in a proxy function which does several things:
+  //
+  //  * Detects whether the mapToProps function being called depends on props, which
+  //    is used by selectorFactory to decide if it should reinvoke on props changes.
+  //
+  //  * On first call, handles mapToProps if returns another function, and treats that
+  //    new function as the true mapToProps for subsequent calls.
+  //
+  //  * On first call, verifies the first result is a plain object, in order to warn
+  //    the developer that their mapToProps function is not returning a valid result.
+  //
+
+  function wrapMapToPropsFunc(mapToProps, methodName) {
+    return function initProxySelector(dispatch, {
+      displayName
+    }) {
+      const proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
+        return proxy.dependsOnOwnProps ? proxy.mapToProps(stateOrDispatch, ownProps) : proxy.mapToProps(stateOrDispatch, undefined);
+      }; // allow detectFactoryAndVerify to get ownProps
+
+
+      proxy.dependsOnOwnProps = true;
+
+      proxy.mapToProps = function detectFactoryAndVerify(stateOrDispatch, ownProps) {
+        proxy.mapToProps = mapToProps;
+        proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps);
+        let props = proxy(stateOrDispatch, ownProps);
+
+        if (typeof props === 'function') {
+          proxy.mapToProps = props;
+          proxy.dependsOnOwnProps = getDependsOnOwnProps(props);
+          props = proxy(stateOrDispatch, ownProps);
+        }
+
+        verifyPlainObject(props, displayName, methodName);
+        return props;
+      };
+
+      return proxy;
     };
   }
-  var connect = /*#__PURE__*/
-  createConnect();
 
-  setBatch(ReactDOM.unstable_batchedUpdates);
+  function createInvalidArgFactory(arg, name) {
+    return (dispatch, options) => {
+      throw new Error(`Invalid value of type ${typeof arg} for ${name} argument when connecting component ${options.wrappedComponentName}.`);
+    };
+  }
 
-  function areInputsEqual(newInputs, lastInputs) {
-    if (newInputs.length !== lastInputs.length) {
+  function mapDispatchToPropsFactory(mapDispatchToProps) {
+    return mapDispatchToProps && typeof mapDispatchToProps === 'object' ? wrapMapToPropsConstant(dispatch => // @ts-ignore
+    bindActionCreators$1(mapDispatchToProps, dispatch)) : !mapDispatchToProps ? wrapMapToPropsConstant(dispatch => ({
+      dispatch
+    })) : typeof mapDispatchToProps === 'function' ? // @ts-ignore
+    wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps') : createInvalidArgFactory(mapDispatchToProps, 'mapDispatchToProps');
+  }
+
+  function mapStateToPropsFactory(mapStateToProps) {
+    return !mapStateToProps ? wrapMapToPropsConstant(() => ({})) : typeof mapStateToProps === 'function' ? // @ts-ignore
+    wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps') : createInvalidArgFactory(mapStateToProps, 'mapStateToProps');
+  }
+
+  function defaultMergeProps(stateProps, dispatchProps, ownProps) {
+    // @ts-ignore
+    return _extends$1({}, ownProps, stateProps, dispatchProps);
+  }
+  function wrapMergePropsFunc(mergeProps) {
+    return function initMergePropsProxy(dispatch, {
+      displayName,
+      areMergedPropsEqual
+    }) {
+      let hasRunOnce = false;
+      let mergedProps;
+      return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
+        const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps);
+
+        if (hasRunOnce) {
+          if (!areMergedPropsEqual(nextMergedProps, mergedProps)) mergedProps = nextMergedProps;
+        } else {
+          hasRunOnce = true;
+          mergedProps = nextMergedProps;
+          verifyPlainObject(mergedProps, displayName, 'mergeProps');
+        }
+
+        return mergedProps;
+      };
+    };
+  }
+  function mergePropsFactory(mergeProps) {
+    return !mergeProps ? () => defaultMergeProps : typeof mergeProps === 'function' ? wrapMergePropsFunc(mergeProps) : createInvalidArgFactory(mergeProps, 'mergeProps');
+  }
+
+  // well as nesting subscriptions of descendant components, so that we can ensure the
+  // ancestor components re-render before descendants
+
+  function createListenerCollection() {
+    const batch = getBatch();
+    let first = null;
+    let last = null;
+    return {
+      clear() {
+        first = null;
+        last = null;
+      },
+
+      notify() {
+        batch(() => {
+          let listener = first;
+
+          while (listener) {
+            listener.callback();
+            listener = listener.next;
+          }
+        });
+      },
+
+      get() {
+        let listeners = [];
+        let listener = first;
+
+        while (listener) {
+          listeners.push(listener);
+          listener = listener.next;
+        }
+
+        return listeners;
+      },
+
+      subscribe(callback) {
+        let isSubscribed = true;
+        let listener = last = {
+          callback,
+          next: null,
+          prev: last
+        };
+
+        if (listener.prev) {
+          listener.prev.next = listener;
+        } else {
+          first = listener;
+        }
+
+        return function unsubscribe() {
+          if (!isSubscribed || first === null) return;
+          isSubscribed = false;
+
+          if (listener.next) {
+            listener.next.prev = listener.prev;
+          } else {
+            last = listener.prev;
+          }
+
+          if (listener.prev) {
+            listener.prev.next = listener.next;
+          } else {
+            first = listener.next;
+          }
+        };
+      }
+
+    };
+  }
+
+  const nullListeners = {
+    notify() {},
+
+    get: () => []
+  };
+  function createSubscription(store, parentSub) {
+    let unsubscribe;
+    let listeners = nullListeners;
+
+    function addNestedSub(listener) {
+      trySubscribe();
+      return listeners.subscribe(listener);
+    }
+
+    function notifyNestedSubs() {
+      listeners.notify();
+    }
+
+    function handleChangeWrapper() {
+      if (subscription.onStateChange) {
+        subscription.onStateChange();
+      }
+    }
+
+    function isSubscribed() {
+      return Boolean(unsubscribe);
+    }
+
+    function trySubscribe() {
+      if (!unsubscribe) {
+        unsubscribe = parentSub ? parentSub.addNestedSub(handleChangeWrapper) : store.subscribe(handleChangeWrapper);
+        listeners = createListenerCollection();
+      }
+    }
+
+    function tryUnsubscribe() {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = undefined;
+        listeners.clear();
+        listeners = nullListeners;
+      }
+    }
+
+    const subscription = {
+      addNestedSub,
+      notifyNestedSubs,
+      handleChangeWrapper,
+      isSubscribed,
+      trySubscribe,
+      tryUnsubscribe,
+      getListeners: () => listeners
+    };
+    return subscription;
+  }
+
+  // To get around it, we can conditionally useEffect on the server (no-op) and
+  // useLayoutEffect in the browser. We need useLayoutEffect to ensure the store
+  // subscription callback always has the selector from the latest render commit
+  // available, otherwise a store update may happen between render and the effect,
+  // which may cause missed updates; we also must ensure the store subscription
+  // is created synchronously, otherwise a store update may occur before the
+  // subscription is created and an inconsistent state may be observed
+  // Matches logic in React's `shared/ExecutionEnvironment` file
+
+  const canUseDOM = !!(typeof window !== 'undefined' && typeof window.document !== 'undefined' && typeof window.document.createElement !== 'undefined');
+  const useIsomorphicLayoutEffect = canUseDOM ? React.useLayoutEffect : React.useEffect;
+
+  function is(x, y) {
+    if (x === y) {
+      return x !== 0 || y !== 0 || 1 / x === 1 / y;
+    } else {
+      return x !== x && y !== y;
+    }
+  }
+
+  function shallowEqual(objA, objB) {
+    if (is(objA, objB)) return true;
+
+    if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
       return false;
     }
 
-    for (var i = 0; i < newInputs.length; i++) {
-      if (newInputs[i] !== lastInputs[i]) {
+    const keysA = Object.keys(objA);
+    const keysB = Object.keys(objB);
+    if (keysA.length !== keysB.length) return false;
+
+    for (let i = 0; i < keysA.length; i++) {
+      if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
         return false;
       }
     }
@@ -3021,31 +2440,435 @@
     return true;
   }
 
-  function useMemoOne(getResult, inputs) {
-    var initial = React.useState(function () {
-      return {
-        inputs: inputs,
-        result: getResult()
-      };
-    })[0];
-    var committed = React.useRef(initial);
-    var isInputMatch = Boolean(inputs && committed.current.inputs && areInputsEqual(inputs, committed.current.inputs));
-    var cache = isInputMatch ? committed.current : {
-      inputs: inputs,
-      result: getResult()
+  const _excluded$1 = ["reactReduxForwardedRef"];
+  let useSyncExternalStore$1 = notInitialized;
+  const initializeConnect = fn => {
+    useSyncExternalStore$1 = fn;
+  }; // Define some constant arrays just to avoid re-creating these
+  const NO_SUBSCRIPTION_ARRAY = [null, null]; // Attempts to stringify whatever not-really-a-component value we were given
+  // for logging in an error message
+
+  const stringifyComponent = Comp => {
+    try {
+      return JSON.stringify(Comp);
+    } catch (err) {
+      return String(Comp);
+    }
+  };
+
+  // This is "just" a `useLayoutEffect`, but with two modifications:
+  // - we need to fall back to `useEffect` in SSR to avoid annoying warnings
+  // - we extract this to a separate function to avoid closing over values
+  //   and causing memory leaks
+  function useIsomorphicLayoutEffectWithArgs(effectFunc, effectArgs, dependencies) {
+    useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies);
+  } // Effect callback, extracted: assign the latest props values to refs for later usage
+
+
+  function captureWrapperProps(lastWrapperProps, lastChildProps, renderIsScheduled, wrapperProps, // actualChildProps: unknown,
+  childPropsFromStoreUpdate, notifyNestedSubs) {
+    // We want to capture the wrapper props and child props we used for later comparisons
+    lastWrapperProps.current = wrapperProps;
+    renderIsScheduled.current = false; // If the render was from a store update, clear out that reference and cascade the subscriber update
+
+    if (childPropsFromStoreUpdate.current) {
+      childPropsFromStoreUpdate.current = null;
+      notifyNestedSubs();
+    }
+  } // Effect callback, extracted: subscribe to the Redux store or nearest connected ancestor,
+  // check for updates after dispatched actions, and trigger re-renders.
+
+
+  function subscribeUpdates(shouldHandleStateChanges, store, subscription, childPropsSelector, lastWrapperProps, lastChildProps, renderIsScheduled, isMounted, childPropsFromStoreUpdate, notifyNestedSubs, // forceComponentUpdateDispatch: React.Dispatch<any>,
+  additionalSubscribeListener) {
+    // If we're not subscribed to the store, nothing to do here
+    if (!shouldHandleStateChanges) return () => {}; // Capture values for checking if and when this component unmounts
+
+    let didUnsubscribe = false;
+    let lastThrownError = null; // We'll run this callback every time a store subscription update propagates to this component
+
+    const checkForUpdates = () => {
+      if (didUnsubscribe || !isMounted.current) {
+        // Don't run stale listeners.
+        // Redux doesn't guarantee unsubscriptions happen until next dispatch.
+        return;
+      } // TODO We're currently calling getState ourselves here, rather than letting `uSES` do it
+
+
+      const latestStoreState = store.getState();
+      let newChildProps, error;
+
+      try {
+        // Actually run the selector with the most recent store state and wrapper props
+        // to determine what the child props should be
+        newChildProps = childPropsSelector(latestStoreState, lastWrapperProps.current);
+      } catch (e) {
+        error = e;
+        lastThrownError = e;
+      }
+
+      if (!error) {
+        lastThrownError = null;
+      } // If the child props haven't changed, nothing to do here - cascade the subscription update
+
+
+      if (newChildProps === lastChildProps.current) {
+        if (!renderIsScheduled.current) {
+          notifyNestedSubs();
+        }
+      } else {
+        // Save references to the new child props.  Note that we track the "child props from store update"
+        // as a ref instead of a useState/useReducer because we need a way to determine if that value has
+        // been processed.  If this went into useState/useReducer, we couldn't clear out the value without
+        // forcing another re-render, which we don't want.
+        lastChildProps.current = newChildProps;
+        childPropsFromStoreUpdate.current = newChildProps;
+        renderIsScheduled.current = true; // TODO This is hacky and not how `uSES` is meant to be used
+        // Trigger the React `useSyncExternalStore` subscriber
+
+        additionalSubscribeListener();
+      }
+    }; // Actually subscribe to the nearest connected ancestor (or store)
+
+
+    subscription.onStateChange = checkForUpdates;
+    subscription.trySubscribe(); // Pull data from the store after first render in case the store has
+    // changed since we began.
+
+    checkForUpdates();
+
+    const unsubscribeWrapper = () => {
+      didUnsubscribe = true;
+      subscription.tryUnsubscribe();
+      subscription.onStateChange = null;
+
+      if (lastThrownError) {
+        // It's possible that we caught an error due to a bad mapState function, but the
+        // parent re-rendered without this component and we're about to unmount.
+        // This shouldn't happen as long as we do top-down subscriptions correctly, but
+        // if we ever do those wrong, this throw will surface the error in our tests.
+        // In that case, throw the error from here so it doesn't get lost.
+        throw lastThrownError;
+      }
     };
-    React.useEffect(function () {
-      committed.current = cache;
-    }, [cache]);
-    return cache.result;
+
+    return unsubscribeWrapper;
+  } // Reducer initial state creation for our update reducer
+
+  function strictEqual(a, b) {
+    return a === b;
   }
-  function useCallbackOne(callback, inputs) {
-    return useMemoOne(function () {
-      return callback;
-    }, inputs);
+  /**
+   * Infers the type of props that a connector will inject into a component.
+   */
+
+
+  let hasWarnedAboutDeprecatedPureOption = false;
+  /**
+   * Connects a React component to a Redux store.
+   *
+   * - Without arguments, just wraps the component, without changing the behavior / props
+   *
+   * - If 2 params are passed (3rd param, mergeProps, is skipped), default behavior
+   * is to override ownProps (as stated in the docs), so what remains is everything that's
+   * not a state or dispatch prop
+   *
+   * - When 3rd param is passed, we don't know if ownProps propagate and whether they
+   * should be valid component props, because it depends on mergeProps implementation.
+   * As such, it is the user's responsibility to extend ownProps interface from state or
+   * dispatch props or both when applicable
+   *
+   * @param mapStateToProps A function that extracts values from state
+   * @param mapDispatchToProps Setup for dispatching actions
+   * @param mergeProps Optional callback to merge state and dispatch props together
+   * @param options Options for configuring the connection
+   *
+   */
+
+  function connect(mapStateToProps, mapDispatchToProps, mergeProps, {
+    // The `pure` option has been removed, so TS doesn't like us destructuring this to check its existence.
+    // @ts-ignore
+    pure,
+    areStatesEqual = strictEqual,
+    areOwnPropsEqual = shallowEqual,
+    areStatePropsEqual = shallowEqual,
+    areMergedPropsEqual = shallowEqual,
+    // use React's forwardRef to expose a ref of the wrapped component
+    forwardRef = false,
+    // the context consumer to use
+    context = ReactReduxContext
+  } = {}) {
+    {
+      if (pure !== undefined && !hasWarnedAboutDeprecatedPureOption) {
+        hasWarnedAboutDeprecatedPureOption = true;
+        warning$2('The `pure` option has been removed. `connect` is now always a "pure/memoized" component');
+      }
+    }
+
+    const Context = context;
+    const initMapStateToProps = mapStateToPropsFactory(mapStateToProps);
+    const initMapDispatchToProps = mapDispatchToPropsFactory(mapDispatchToProps);
+    const initMergeProps = mergePropsFactory(mergeProps);
+    const shouldHandleStateChanges = Boolean(mapStateToProps);
+
+    const wrapWithConnect = WrappedComponent => {
+      if ( !reactIs_1(WrappedComponent)) {
+        throw new Error(`You must pass a component to the function returned by connect. Instead received ${stringifyComponent(WrappedComponent)}`);
+      }
+
+      const wrappedComponentName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
+      const displayName = `Connect(${wrappedComponentName})`;
+      const selectorFactoryOptions = {
+        shouldHandleStateChanges,
+        displayName,
+        wrappedComponentName,
+        WrappedComponent,
+        // @ts-ignore
+        initMapStateToProps,
+        // @ts-ignore
+        initMapDispatchToProps,
+        initMergeProps,
+        areStatesEqual,
+        areStatePropsEqual,
+        areOwnPropsEqual,
+        areMergedPropsEqual
+      };
+
+      function ConnectFunction(props) {
+        const [propsContext, reactReduxForwardedRef, wrapperProps] = React.useMemo(() => {
+          // Distinguish between actual "data" props that were passed to the wrapper component,
+          // and values needed to control behavior (forwarded refs, alternate context instances).
+          // To maintain the wrapperProps object reference, memoize this destructuring.
+          const {
+            reactReduxForwardedRef
+          } = props,
+                wrapperProps = _objectWithoutPropertiesLoose(props, _excluded$1);
+
+          return [props.context, reactReduxForwardedRef, wrapperProps];
+        }, [props]);
+        const ContextToUse = React.useMemo(() => {
+          // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
+          // Memoize the check that determines which context instance we should use.
+          return propsContext && propsContext.Consumer && // @ts-ignore
+          reactIs_2( /*#__PURE__*/React__default.createElement(propsContext.Consumer, null)) ? propsContext : Context;
+        }, [propsContext, Context]); // Retrieve the store and ancestor subscription via context, if available
+
+        const contextValue = React.useContext(ContextToUse); // The store _must_ exist as either a prop or in context.
+        // We'll check to see if it _looks_ like a Redux store first.
+        // This allows us to pass through a `store` prop that is just a plain value.
+
+        const didStoreComeFromProps = Boolean(props.store) && Boolean(props.store.getState) && Boolean(props.store.dispatch);
+        const didStoreComeFromContext = Boolean(contextValue) && Boolean(contextValue.store);
+
+        if ( !didStoreComeFromProps && !didStoreComeFromContext) {
+          throw new Error(`Could not find "store" in the context of ` + `"${displayName}". Either wrap the root component in a <Provider>, ` + `or pass a custom React context provider to <Provider> and the corresponding ` + `React context consumer to ${displayName} in connect options.`);
+        } // Based on the previous check, one of these must be true
+
+
+        const store = didStoreComeFromProps ? props.store : contextValue.store;
+        const getServerState = didStoreComeFromContext ? contextValue.getServerState : store.getState;
+        const childPropsSelector = React.useMemo(() => {
+          // The child props selector needs the store reference as an input.
+          // Re-create this selector whenever the store changes.
+          return finalPropsSelectorFactory(store.dispatch, selectorFactoryOptions);
+        }, [store]);
+        const [subscription, notifyNestedSubs] = React.useMemo(() => {
+          if (!shouldHandleStateChanges) return NO_SUBSCRIPTION_ARRAY; // This Subscription's source should match where store came from: props vs. context. A component
+          // connected to the store via props shouldn't use subscription from context, or vice versa.
+
+          const subscription = createSubscription(store, didStoreComeFromProps ? undefined : contextValue.subscription); // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
+          // the middle of the notification loop, where `subscription` will then be null. This can
+          // probably be avoided if Subscription's listeners logic is changed to not call listeners
+          // that have been unsubscribed in the  middle of the notification loop.
+
+          const notifyNestedSubs = subscription.notifyNestedSubs.bind(subscription);
+          return [subscription, notifyNestedSubs];
+        }, [store, didStoreComeFromProps, contextValue]); // Determine what {store, subscription} value should be put into nested context, if necessary,
+        // and memoize that value to avoid unnecessary context updates.
+
+        const overriddenContextValue = React.useMemo(() => {
+          if (didStoreComeFromProps) {
+            // This component is directly subscribed to a store from props.
+            // We don't want descendants reading from this store - pass down whatever
+            // the existing context value is from the nearest connected ancestor.
+            return contextValue;
+          } // Otherwise, put this component's subscription instance into context, so that
+          // connected descendants won't update until after this component is done
+
+
+          return _extends$1({}, contextValue, {
+            subscription
+          });
+        }, [didStoreComeFromProps, contextValue, subscription]); // Set up refs to coordinate values between the subscription effect and the render logic
+
+        const lastChildProps = React.useRef();
+        const lastWrapperProps = React.useRef(wrapperProps);
+        const childPropsFromStoreUpdate = React.useRef();
+        const renderIsScheduled = React.useRef(false);
+        const isProcessingDispatch = React.useRef(false);
+        const isMounted = React.useRef(false);
+        const latestSubscriptionCallbackError = React.useRef();
+        useIsomorphicLayoutEffect(() => {
+          isMounted.current = true;
+          return () => {
+            isMounted.current = false;
+          };
+        }, []);
+        const actualChildPropsSelector = React.useMemo(() => {
+          const selector = () => {
+            // Tricky logic here:
+            // - This render may have been triggered by a Redux store update that produced new child props
+            // - However, we may have gotten new wrapper props after that
+            // If we have new child props, and the same wrapper props, we know we should use the new child props as-is.
+            // But, if we have new wrapper props, those might change the child props, so we have to recalculate things.
+            // So, we'll use the child props from store update only if the wrapper props are the same as last time.
+            if (childPropsFromStoreUpdate.current && wrapperProps === lastWrapperProps.current) {
+              return childPropsFromStoreUpdate.current;
+            } // TODO We're reading the store directly in render() here. Bad idea?
+            // This will likely cause Bad Things (TM) to happen in Concurrent Mode.
+            // Note that we do this because on renders _not_ caused by store updates, we need the latest store state
+            // to determine what the child props should be.
+
+
+            return childPropsSelector(store.getState(), wrapperProps);
+          };
+
+          return selector;
+        }, [store, wrapperProps]); // We need this to execute synchronously every time we re-render. However, React warns
+        // about useLayoutEffect in SSR, so we try to detect environment and fall back to
+        // just useEffect instead to avoid the warning, since neither will run anyway.
+
+        const subscribeForReact = React.useMemo(() => {
+          const subscribe = reactListener => {
+            if (!subscription) {
+              return () => {};
+            }
+
+            return subscribeUpdates(shouldHandleStateChanges, store, subscription, // @ts-ignore
+            childPropsSelector, lastWrapperProps, lastChildProps, renderIsScheduled, isMounted, childPropsFromStoreUpdate, notifyNestedSubs, reactListener);
+          };
+
+          return subscribe;
+        }, [subscription]);
+        useIsomorphicLayoutEffectWithArgs(captureWrapperProps, [lastWrapperProps, lastChildProps, renderIsScheduled, wrapperProps, childPropsFromStoreUpdate, notifyNestedSubs]);
+        let actualChildProps;
+
+        try {
+          actualChildProps = useSyncExternalStore$1( // TODO We're passing through a big wrapper that does a bunch of extra side effects besides subscribing
+          subscribeForReact, // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,
+          // TODO and we're just passing that through so it triggers a re-render for us rather than relying on `uSES`.
+          actualChildPropsSelector, getServerState ? () => childPropsSelector(getServerState(), wrapperProps) : actualChildPropsSelector);
+        } catch (err) {
+          if (latestSubscriptionCallbackError.current) {
+            err.message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`;
+          }
+
+          throw err;
+        }
+
+        useIsomorphicLayoutEffect(() => {
+          latestSubscriptionCallbackError.current = undefined;
+          childPropsFromStoreUpdate.current = undefined;
+          lastChildProps.current = actualChildProps;
+        }); // Now that all that's done, we can finally try to actually render the child component.
+        // We memoize the elements for the rendered child component as an optimization.
+
+        const renderedWrappedComponent = React.useMemo(() => {
+          return (
+            /*#__PURE__*/
+            // @ts-ignore
+            React__default.createElement(WrappedComponent, _extends$1({}, actualChildProps, {
+              ref: reactReduxForwardedRef
+            }))
+          );
+        }, [reactReduxForwardedRef, WrappedComponent, actualChildProps]); // If React sees the exact same element reference as last time, it bails out of re-rendering
+        // that child, same as if it was wrapped in React.memo() or returned false from shouldComponentUpdate.
+
+        const renderedChild = React.useMemo(() => {
+          if (shouldHandleStateChanges) {
+            // If this component is subscribed to store updates, we need to pass its own
+            // subscription instance down to our descendants. That means rendering the same
+            // Context instance, and putting a different value into the context.
+            return /*#__PURE__*/React__default.createElement(ContextToUse.Provider, {
+              value: overriddenContextValue
+            }, renderedWrappedComponent);
+          }
+
+          return renderedWrappedComponent;
+        }, [ContextToUse, renderedWrappedComponent, overriddenContextValue]);
+        return renderedChild;
+      }
+
+      const _Connect = React__default.memo(ConnectFunction);
+
+      // Add a hacky cast to get the right output type
+      const Connect = _Connect;
+      Connect.WrappedComponent = WrappedComponent;
+      Connect.displayName = ConnectFunction.displayName = displayName;
+
+      if (forwardRef) {
+        const _forwarded = React__default.forwardRef(function forwardConnectRef(props, ref) {
+          // @ts-ignore
+          return /*#__PURE__*/React__default.createElement(Connect, _extends$1({}, props, {
+            reactReduxForwardedRef: ref
+          }));
+        });
+
+        const forwarded = _forwarded;
+        forwarded.displayName = displayName;
+        forwarded.WrappedComponent = WrappedComponent;
+        return hoistNonReactStatics_cjs(forwarded, WrappedComponent);
+      }
+
+      return hoistNonReactStatics_cjs(Connect, WrappedComponent);
+    };
+
+    return wrapWithConnect;
   }
-  var useMemo = useMemoOne;
-  var useCallback = useCallbackOne;
+
+  function Provider({
+    store,
+    context,
+    children,
+    serverState
+  }) {
+    const contextValue = React.useMemo(() => {
+      const subscription = createSubscription(store);
+      return {
+        store,
+        subscription,
+        getServerState: serverState ? () => serverState : undefined
+      };
+    }, [store, serverState]);
+    const previousState = React.useMemo(() => store.getState(), [store]);
+    useIsomorphicLayoutEffect(() => {
+      const {
+        subscription
+      } = contextValue;
+      subscription.onStateChange = subscription.notifyNestedSubs;
+      subscription.trySubscribe();
+
+      if (previousState !== store.getState()) {
+        subscription.notifyNestedSubs();
+      }
+
+      return () => {
+        subscription.tryUnsubscribe();
+        subscription.onStateChange = undefined;
+      };
+    }, [contextValue, previousState]);
+    const Context = context || ReactReduxContext; // @ts-ignore 'AnyAction' is assignable to the constraint of type 'A', but 'A' could be instantiated with a different subtype
+
+    return /*#__PURE__*/React__default.createElement(Context.Provider, {
+      value: contextValue
+    }, children);
+  }
+
+  // The primary entry point assumes we're working with standard ReactDOM/RN, but
+  initializeConnect(shim_1); // Enable batched updates in our subscriptions for use
+  // with standard React renderers (ReactDOM, React Native)
+
+  setBatch(ReactDOM.unstable_batchedUpdates);
 
   var origin = {
     x: 0,
@@ -3374,7 +3197,7 @@
     return result;
   });
 
-  function areInputsEqual$1(newInputs, lastInputs) {
+  function areInputsEqual(newInputs, lastInputs) {
       if (newInputs.length !== lastInputs.length) {
           return false;
       }
@@ -3387,7 +3210,7 @@
   }
 
   function memoizeOne(resultFn, isEqual) {
-      if (isEqual === void 0) { isEqual = areInputsEqual$1; }
+      if (isEqual === void 0) { isEqual = areInputsEqual; }
       var lastThis;
       var lastArgs = [];
       var lastResult;
@@ -6895,7 +6718,7 @@
         getResponders = _ref.getResponders,
         announce = _ref.announce,
         autoScroller = _ref.autoScroller;
-    return createStore(reducer, composeEnhancers(applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
+    return legacy_createStore(reducer, composeEnhancers(applyMiddleware(style(styleMarshal), dimensionMarshalStopper(dimensionMarshal), lift$1(dimensionMarshal), drop$1, dropAnimationFinish, dropAnimationFlushOnScroll, pendingDrop, autoScroll(autoScroller), scrollListener, focus(focusMarshal), responders(getResponders, announce))));
   });
 
   var clean$1 = function clean() {
@@ -7987,17 +7810,17 @@
   };
 
   function useStyleMarshal(contextId, nonce) {
-    var styles = useMemo(function () {
+    var styles = React.useMemo(function () {
       return getStyles$1(contextId);
     }, [contextId]);
     var alwaysRef = React.useRef(null);
     var dynamicRef = React.useRef(null);
-    var setDynamicStyle = useCallback(memoizeOne(function (proposed) {
+    var setDynamicStyle = React.useCallback(memoizeOne(function (proposed) {
       var el = dynamicRef.current;
       !el ?  invariant(false, 'Cannot set dynamic style element if it is not set')  : void 0;
       el.textContent = proposed;
     }), []);
-    var setAlwaysStyle = useCallback(function (proposed) {
+    var setAlwaysStyle = React.useCallback(function (proposed) {
       var el = alwaysRef.current;
       !el ?  invariant(false, 'Cannot set dynamic style element if it is not set')  : void 0;
       el.textContent = proposed;
@@ -8026,10 +7849,10 @@
         remove(dynamicRef);
       };
     }, [nonce, setAlwaysStyle, setDynamicStyle, styles.always, styles.resting, contextId]);
-    var dragging = useCallback(function () {
+    var dragging = React.useCallback(function () {
       return setDynamicStyle(styles.dragging);
     }, [setDynamicStyle, styles.dragging]);
-    var dropping = useCallback(function (reason) {
+    var dropping = React.useCallback(function (reason) {
       if (reason === 'DROP') {
         setDynamicStyle(styles.dropAnimating);
         return;
@@ -8037,14 +7860,14 @@
 
       setDynamicStyle(styles.userCancel);
     }, [setDynamicStyle, styles.dropAnimating, styles.userCancel]);
-    var resting = useCallback(function () {
+    var resting = React.useCallback(function () {
       if (!dynamicRef.current) {
         return;
       }
 
       setDynamicStyle(styles.resting);
     }, [setDynamicStyle, styles.resting]);
-    var marshal = useMemo(function () {
+    var marshal = React.useMemo(function () {
       return {
         dragging: dragging,
         dropping: dropping,
@@ -8093,7 +7916,7 @@
     var recordRef = React.useRef(null);
     var restoreFocusFrameRef = React.useRef(null);
     var isMountedRef = React.useRef(false);
-    var register = useCallback(function register(id, focus) {
+    var register = React.useCallback(function register(id, focus) {
       var entry = {
         id: id,
         focus: focus
@@ -8108,19 +7931,19 @@
         }
       };
     }, []);
-    var tryGiveFocus = useCallback(function tryGiveFocus(tryGiveFocusTo) {
+    var tryGiveFocus = React.useCallback(function tryGiveFocus(tryGiveFocusTo) {
       var handle = findDragHandle(contextId, tryGiveFocusTo);
 
       if (handle && handle !== document.activeElement) {
         handle.focus();
       }
     }, [contextId]);
-    var tryShiftRecord = useCallback(function tryShiftRecord(previous, redirectTo) {
+    var tryShiftRecord = React.useCallback(function tryShiftRecord(previous, redirectTo) {
       if (recordRef.current === previous) {
         recordRef.current = redirectTo;
       }
     }, []);
-    var tryRestoreFocusRecorded = useCallback(function tryRestoreFocusRecorded() {
+    var tryRestoreFocusRecorded = React.useCallback(function tryRestoreFocusRecorded() {
       if (restoreFocusFrameRef.current) {
         return;
       }
@@ -8138,7 +7961,7 @@
         }
       });
     }, [tryGiveFocus]);
-    var tryRecordFocus = useCallback(function tryRecordFocus(id) {
+    var tryRecordFocus = React.useCallback(function tryRecordFocus(id) {
       recordRef.current = null;
       var focused = document.activeElement;
 
@@ -8163,7 +7986,7 @@
         }
       };
     }, []);
-    var marshal = useMemo(function () {
+    var marshal = React.useMemo(function () {
       return {
         register: register,
         tryRecordFocus: tryRecordFocus,
@@ -8318,7 +8141,7 @@
   }
 
   function useRegistry() {
-    var registry = useMemo(createRegistry, []);
+    var registry = React.useMemo(createRegistry, []);
     React.useEffect(function () {
       return function unmount() {
         requestAnimationFrame(registry.clean);
@@ -8351,7 +8174,7 @@
     return "rbd-announcement-" + contextId;
   };
   function useAnnouncer(contextId) {
-    var id = useMemo(function () {
+    var id = React.useMemo(function () {
       return getId(contextId);
     }, [contextId]);
     var ref = React.useRef(null);
@@ -8379,7 +8202,7 @@
         });
       };
     }, [id]);
-    var announce = useCallback(function (message) {
+    var announce = React.useCallback(function (message) {
       var el = ref.current;
 
       if (el) {
@@ -8404,7 +8227,7 @@
       options = defaults;
     }
 
-    return useMemo(function () {
+    return React.useMemo(function () {
       return "" + prefix + options.separator + count++;
     }, [options.separator, prefix]);
   }
@@ -8420,7 +8243,7 @@
     var uniqueId = useUniqueId('hidden-text', {
       separator: '-'
     });
-    var id = useMemo(function () {
+    var id = React.useMemo(function () {
       return getElementId({
         contextId: contextId,
         uniqueId: uniqueId
@@ -8756,7 +8579,7 @@
   function useMouseSensor(api) {
     var phaseRef = React.useRef(idle$1);
     var unbindEventsRef = React.useRef(noop);
-    var startCaptureBinding = useMemo(function () {
+    var startCaptureBinding = React.useMemo(function () {
       return {
         eventName: 'mousedown',
         fn: function onMouseDown(event) {
@@ -8796,7 +8619,7 @@
         }
       };
     }, [api]);
-    var preventForcePressBinding = useMemo(function () {
+    var preventForcePressBinding = React.useMemo(function () {
       return {
         eventName: 'webkitmouseforcewillbegin',
         fn: function fn(event) {
@@ -8828,14 +8651,14 @@
         }
       };
     }, [api]);
-    var listenForCapture = useCallback(function listenForCapture() {
+    var listenForCapture = React.useCallback(function listenForCapture() {
       var options = {
         passive: false,
         capture: true
       };
       unbindEventsRef.current = bindEvents(window, [preventForcePressBinding, startCaptureBinding], options);
     }, [preventForcePressBinding, startCaptureBinding]);
-    var stop = useCallback(function () {
+    var stop = React.useCallback(function () {
       var current = phaseRef.current;
 
       if (current.type === 'IDLE') {
@@ -8846,7 +8669,7 @@
       unbindEventsRef.current();
       listenForCapture();
     }, [listenForCapture]);
-    var cancel = useCallback(function () {
+    var cancel = React.useCallback(function () {
       var phase = phaseRef.current;
       stop();
 
@@ -8860,7 +8683,7 @@
         phase.actions.abort();
       }
     }, [stop]);
-    var bindCapturingEvents = useCallback(function bindCapturingEvents() {
+    var bindCapturingEvents = React.useCallback(function bindCapturingEvents() {
       var options = {
         capture: true,
         passive: false
@@ -8877,7 +8700,7 @@
       });
       unbindEventsRef.current = bindEvents(window, bindings, options);
     }, [cancel, stop]);
-    var startPendingDrag = useCallback(function startPendingDrag(actions, point) {
+    var startPendingDrag = React.useCallback(function startPendingDrag(actions, point) {
       !(phaseRef.current.type === 'IDLE') ?  invariant(false, 'Expected to move from IDLE to PENDING drag')  : void 0;
       phaseRef.current = {
         type: 'PENDING',
@@ -8986,7 +8809,7 @@
 
   function useKeyboardSensor(api) {
     var unbindEventsRef = React.useRef(noop$1);
-    var startCaptureBinding = useMemo(function () {
+    var startCaptureBinding = React.useMemo(function () {
       return {
         eventName: 'keydown',
         fn: function onKeyDown(event) {
@@ -9031,7 +8854,7 @@
         }
       };
     }, [api]);
-    var listenForCapture = useCallback(function tryStartCapture() {
+    var listenForCapture = React.useCallback(function tryStartCapture() {
       var options = {
         passive: false,
         capture: true
@@ -9189,13 +9012,13 @@
   function useTouchSensor(api) {
     var phaseRef = React.useRef(idle$2);
     var unbindEventsRef = React.useRef(noop);
-    var getPhase = useCallback(function getPhase() {
+    var getPhase = React.useCallback(function getPhase() {
       return phaseRef.current;
     }, []);
-    var setPhase = useCallback(function setPhase(phase) {
+    var setPhase = React.useCallback(function setPhase(phase) {
       phaseRef.current = phase;
     }, []);
-    var startCaptureBinding = useMemo(function () {
+    var startCaptureBinding = React.useMemo(function () {
       return {
         eventName: 'touchstart',
         fn: function onTouchStart(event) {
@@ -9229,14 +9052,14 @@
         }
       };
     }, [api]);
-    var listenForCapture = useCallback(function listenForCapture() {
+    var listenForCapture = React.useCallback(function listenForCapture() {
       var options = {
         capture: true,
         passive: false
       };
       unbindEventsRef.current = bindEvents(window, [startCaptureBinding], options);
     }, [startCaptureBinding]);
-    var stop = useCallback(function () {
+    var stop = React.useCallback(function () {
       var current = phaseRef.current;
 
       if (current.type === 'IDLE') {
@@ -9251,7 +9074,7 @@
       unbindEventsRef.current();
       listenForCapture();
     }, [listenForCapture, setPhase]);
-    var cancel = useCallback(function () {
+    var cancel = React.useCallback(function () {
       var phase = phaseRef.current;
       stop();
 
@@ -9265,7 +9088,7 @@
         phase.actions.abort();
       }
     }, [stop]);
-    var bindCapturingEvents = useCallback(function bindCapturingEvents() {
+    var bindCapturingEvents = React.useCallback(function bindCapturingEvents() {
       var options = {
         capture: true,
         passive: false
@@ -9283,7 +9106,7 @@
         unbindWindow();
       };
     }, [cancel, getPhase, stop]);
-    var startDragging = useCallback(function startDragging() {
+    var startDragging = React.useCallback(function startDragging() {
       var phase = getPhase();
       !(phase.type === 'PENDING') ?  invariant(false, "Cannot start dragging from phase " + phase.type)  : void 0;
       var actions = phase.actions.fluidLift(phase.point);
@@ -9293,7 +9116,7 @@
         hasMoved: false
       });
     }, [getPhase, setPhase]);
-    var startPendingDrag = useCallback(function startPendingDrag(actions, point) {
+    var startPendingDrag = React.useCallback(function startPendingDrag(actions, point) {
       !(getPhase().type === 'IDLE') ?  invariant(false, 'Expected to move from IDLE to PENDING drag')  : void 0;
       var longPressTimerId = setTimeout(startDragging, timeForLongPress);
       setPhase({
@@ -9747,7 +9570,7 @@
     var lockAPI = React.useState(function () {
       return create();
     })[0];
-    var tryAbandonLock = useCallback(function tryAbandonLock(previous, current) {
+    var tryAbandonLock = React.useCallback(function tryAbandonLock(previous, current) {
       if (previous.isDragging && !current.isDragging) {
         lockAPI.tryAbandon();
       }
@@ -9764,7 +9587,7 @@
     useIsomorphicLayoutEffect$1(function () {
       return lockAPI.tryAbandon;
     }, [lockAPI.tryAbandon]);
-    var canGetLock = useCallback(function (draggableId) {
+    var canGetLock = React.useCallback(function (draggableId) {
       return canStart({
         lockAPI: lockAPI,
         registry: registry,
@@ -9772,7 +9595,7 @@
         draggableId: draggableId
       });
     }, [lockAPI, registry, store]);
-    var tryGetLock = useCallback(function (draggableId, forceStop, options) {
+    var tryGetLock = React.useCallback(function (draggableId, forceStop, options) {
       return tryStart({
         lockAPI: lockAPI,
         registry: registry,
@@ -9783,14 +9606,14 @@
         sourceEvent: options && options.sourceEvent ? options.sourceEvent : null
       });
     }, [contextId, lockAPI, registry, store]);
-    var findClosestDraggableId = useCallback(function (event) {
+    var findClosestDraggableId = React.useCallback(function (event) {
       return tryGetClosestDraggableIdFromEvent(contextId, event);
     }, [contextId]);
-    var findOptionsForDraggable = useCallback(function (id) {
+    var findOptionsForDraggable = React.useCallback(function (id) {
       var entry = registry.draggable.findById(id);
       return entry ? entry.options : null;
     }, [registry.draggable]);
-    var tryReleaseLock = useCallback(function tryReleaseLock() {
+    var tryReleaseLock = React.useCallback(function tryReleaseLock() {
       if (!lockAPI.isClaimed()) {
         return;
       }
@@ -9801,8 +9624,8 @@
         store.dispatch(flush());
       }
     }, [lockAPI, store]);
-    var isLockClaimed = useCallback(lockAPI.isClaimed, [lockAPI]);
-    var api = useMemo(function () {
+    var isLockClaimed = React.useCallback(lockAPI.isClaimed, [lockAPI]);
+    var api = React.useMemo(function () {
       return {
         canGetLock: canGetLock,
         tryGetLock: tryGetLock,
@@ -9843,7 +9666,7 @@
     var lazyStoreRef = React.useRef(null);
     useStartupValidation();
     var lastPropsRef = usePrevious(props);
-    var getResponders = useCallback(function () {
+    var getResponders = React.useCallback(function () {
       return createResponders(lastPropsRef.current);
     }, [lastPropsRef]);
     var announce = useAnnouncer(contextId);
@@ -9852,10 +9675,10 @@
       text: dragHandleUsageInstructions
     });
     var styleMarshal = useStyleMarshal(contextId, nonce);
-    var lazyDispatch = useCallback(function (action) {
+    var lazyDispatch = React.useCallback(function (action) {
       getStore(lazyStoreRef).dispatch(action);
     }, []);
-    var marshalCallbacks = useMemo(function () {
+    var marshalCallbacks = React.useMemo(function () {
       return bindActionCreators({
         publishWhileDragging: publishWhileDragging,
         updateDroppableScroll: updateDroppableScroll,
@@ -9865,10 +9688,10 @@
       }, lazyDispatch);
     }, [lazyDispatch]);
     var registry = useRegistry();
-    var dimensionMarshal = useMemo(function () {
+    var dimensionMarshal = React.useMemo(function () {
       return createDimensionMarshal(registry, marshalCallbacks);
     }, [registry, marshalCallbacks]);
-    var autoScroller = useMemo(function () {
+    var autoScroller = React.useMemo(function () {
       return createAutoScroller(_extends({
         scrollWindow: scrollWindow,
         scrollDroppable: dimensionMarshal.scrollDroppable
@@ -9877,7 +9700,7 @@
       }, lazyDispatch)));
     }, [dimensionMarshal.scrollDroppable, lazyDispatch]);
     var focusMarshal = useFocusMarshal(contextId);
-    var store = useMemo(function () {
+    var store = React.useMemo(function () {
       return createStore$1({
         announce: announce,
         autoScroller: autoScroller,
@@ -9895,7 +9718,7 @@
     }
 
     lazyStoreRef.current = store;
-    var tryResetStore = useCallback(function () {
+    var tryResetStore = React.useCallback(function () {
       var current = getStore(lazyStoreRef);
       var state = current.getState();
 
@@ -9903,24 +9726,24 @@
         current.dispatch(flush());
       }
     }, []);
-    var isDragging = useCallback(function () {
+    var isDragging = React.useCallback(function () {
       var state = getStore(lazyStoreRef).getState();
       return state.isDragging || state.phase === 'DROP_ANIMATING';
     }, []);
-    var appCallbacks = useMemo(function () {
+    var appCallbacks = React.useMemo(function () {
       return {
         isDragging: isDragging,
         tryAbort: tryResetStore
       };
     }, [isDragging, tryResetStore]);
     setCallbacks(appCallbacks);
-    var getCanLift = useCallback(function (id) {
+    var getCanLift = React.useCallback(function (id) {
       return canStartDrag(getStore(lazyStoreRef).getState(), id);
     }, []);
-    var getIsMovementAllowed = useCallback(function () {
+    var getIsMovementAllowed = React.useCallback(function () {
       return isMovementAllowed(getStore(lazyStoreRef).getState());
     }, []);
-    var appContext = useMemo(function () {
+    var appContext = React.useMemo(function () {
       return {
         marshal: dimensionMarshal,
         focus: focusMarshal,
@@ -9954,7 +9777,7 @@
     count$1 = 0;
   }
   function useInstanceCount() {
-    return useMemo(function () {
+    return React.useMemo(function () {
       return "" + count$1++;
     }, []);
   }
@@ -10262,7 +10085,7 @@
     var registry = appContext.registry,
         marshal = appContext.marshal;
     var previousRef = usePrevious(args);
-    var descriptor = useMemo(function () {
+    var descriptor = React.useMemo(function () {
       return {
         id: args.droppableId,
         type: args.type,
@@ -10270,7 +10093,7 @@
       };
     }, [args.droppableId, args.mode, args.type]);
     var publishedDescriptorRef = React.useRef(descriptor);
-    var memoizedUpdateScroll = useMemo(function () {
+    var memoizedUpdateScroll = React.useMemo(function () {
       return memoizeOne(function (x, y) {
         !whileDraggingRef.current ?  invariant(false, 'Can only update scroll when dragging')  : void 0;
         var scroll = {
@@ -10280,7 +10103,7 @@
         marshal.updateDroppableScroll(descriptor.id, scroll);
       });
     }, [descriptor.id, marshal]);
-    var getClosestScroll = useCallback(function () {
+    var getClosestScroll = React.useCallback(function () {
       var dragging = whileDraggingRef.current;
 
       if (!dragging || !dragging.env.closestScrollable) {
@@ -10289,14 +10112,14 @@
 
       return getScroll$1(dragging.env.closestScrollable);
     }, []);
-    var updateScroll = useCallback(function () {
+    var updateScroll = React.useCallback(function () {
       var scroll = getClosestScroll();
       memoizedUpdateScroll(scroll.x, scroll.y);
     }, [getClosestScroll, memoizedUpdateScroll]);
-    var scheduleScrollUpdate = useMemo(function () {
+    var scheduleScrollUpdate = React.useMemo(function () {
       return rafSchd(updateScroll);
     }, [updateScroll]);
-    var onClosestScroll = useCallback(function () {
+    var onClosestScroll = React.useCallback(function () {
       var dragging = whileDraggingRef.current;
       var closest = getClosestScrollableFromDrag(dragging);
       !(dragging && closest) ?  invariant(false, 'Could not find scroll options while scrolling')  : void 0;
@@ -10309,7 +10132,7 @@
 
       scheduleScrollUpdate();
     }, [scheduleScrollUpdate, updateScroll]);
-    var getDimensionAndWatchScroll = useCallback(function (windowScroll, options) {
+    var getDimensionAndWatchScroll = React.useCallback(function (windowScroll, options) {
       !!whileDraggingRef.current ?  invariant(false, 'Cannot collect a droppable while a drag is occurring')  : void 0;
       var previous = previousRef.current;
       var ref = previous.getDroppableRef();
@@ -10345,13 +10168,13 @@
 
       return dimension;
     }, [appContext.contextId, descriptor, onClosestScroll, previousRef]);
-    var getScrollWhileDragging = useCallback(function () {
+    var getScrollWhileDragging = React.useCallback(function () {
       var dragging = whileDraggingRef.current;
       var closest = getClosestScrollableFromDrag(dragging);
       !(dragging && closest) ?  invariant(false, 'Can only recollect Droppable client for Droppables that have a scroll container')  : void 0;
       return getScroll$1(closest);
     }, []);
-    var dragStopped = useCallback(function () {
+    var dragStopped = React.useCallback(function () {
       var dragging = whileDraggingRef.current;
       !dragging ?  invariant(false, 'Cannot stop drag when no active drag')  : void 0;
       var closest = getClosestScrollableFromDrag(dragging);
@@ -10365,7 +10188,7 @@
       closest.removeAttribute(scrollContainer.contextId);
       closest.removeEventListener('scroll', onClosestScroll, getListenerOptions(dragging.scrollOptions));
     }, [onClosestScroll, scheduleScrollUpdate]);
-    var scroll = useCallback(function (change) {
+    var scroll = React.useCallback(function (change) {
       var dragging = whileDraggingRef.current;
       !dragging ?  invariant(false, 'Cannot scroll when there is no drag')  : void 0;
       var closest = getClosestScrollableFromDrag(dragging);
@@ -10373,7 +10196,7 @@
       closest.scrollTop += change.y;
       closest.scrollLeft += change.x;
     }, []);
-    var callbacks = useMemo(function () {
+    var callbacks = React.useMemo(function () {
       return {
         getDimensionAndWatchScroll: getDimensionAndWatchScroll,
         getScrollWhileDragging: getScrollWhileDragging,
@@ -10381,7 +10204,7 @@
         scroll: scroll
       };
     }, [dragStopped, getDimensionAndWatchScroll, getScrollWhileDragging, scroll]);
-    var entry = useMemo(function () {
+    var entry = React.useMemo(function () {
       return {
         uniqueId: uniqueId,
         descriptor: descriptor,
@@ -10471,7 +10294,7 @@
 
   function Placeholder(props) {
     var animateOpenTimerRef = React.useRef(null);
-    var tryClearAnimateOpenTimer = useCallback(function () {
+    var tryClearAnimateOpenTimer = React.useCallback(function () {
       if (!animateOpenTimerRef.current) {
         return;
       }
@@ -10509,7 +10332,7 @@
       });
       return tryClearAnimateOpenTimer;
     }, [animate, isAnimatingOpenOnMount, tryClearAnimateOpenTimer]);
-    var onSizeChangeEnd = useCallback(function (event) {
+    var onSizeChangeEnd = React.useCallback(function (event) {
       if (event.propertyName !== 'height') {
         return;
       }
@@ -10787,19 +10610,19 @@
         canDragInteractiveElements = args.canDragInteractiveElements,
         shouldRespectForcePress = args.shouldRespectForcePress,
         isEnabled = args.isEnabled;
-    var options = useMemo(function () {
+    var options = React.useMemo(function () {
       return {
         canDragInteractiveElements: canDragInteractiveElements,
         shouldRespectForcePress: shouldRespectForcePress,
         isEnabled: isEnabled
       };
     }, [canDragInteractiveElements, isEnabled, shouldRespectForcePress]);
-    var getDimension = useCallback(function (windowScroll) {
+    var getDimension = React.useCallback(function (windowScroll) {
       var el = getDraggableRef();
       !el ?  invariant(false, 'Cannot get dimension when no ref is set')  : void 0;
       return getDimension$1(descriptor, el, windowScroll);
     }, [descriptor, getDraggableRef]);
-    var entry = useMemo(function () {
+    var entry = React.useMemo(function () {
       return {
         uniqueId: uniqueId,
         descriptor: descriptor,
@@ -10864,10 +10687,10 @@
 
   function Draggable(props) {
     var ref = React.useRef(null);
-    var setRef = useCallback(function (el) {
+    var setRef = React.useCallback(function (el) {
       ref.current = el;
     }, []);
-    var getRef = useCallback(function () {
+    var getRef = React.useCallback(function () {
       return ref.current;
     }, []);
 
@@ -10880,7 +10703,7 @@
         type = _useRequiredContext2.type,
         droppableId = _useRequiredContext2.droppableId;
 
-    var descriptor = useMemo(function () {
+    var descriptor = React.useMemo(function () {
       return {
         id: props.draggableId,
         index: props.index,
@@ -10900,7 +10723,7 @@
     useClonePropValidation(isClone);
 
     if (!isClone) {
-      var forPublisher = useMemo(function () {
+      var forPublisher = React.useMemo(function () {
         return {
           descriptor: descriptor,
           registry: registry,
@@ -10913,7 +10736,7 @@
       useDraggablePublisher(forPublisher);
     }
 
-    var dragHandleProps = useMemo(function () {
+    var dragHandleProps = React.useMemo(function () {
       return isEnabled ? {
         tabIndex: 0,
         role: 'button',
@@ -10924,7 +10747,7 @@
         onDragStart: preventHtml5Dnd
       } : null;
     }, [contextId, dragHandleUsageInstructionsId, draggableId, isEnabled]);
-    var onMoveEnd = useCallback(function (event) {
+    var onMoveEnd = React.useCallback(function (event) {
       if (mapped.type !== 'DRAGGING') {
         return;
       }
@@ -10939,7 +10762,7 @@
 
       dropAnimationFinishedAction();
     }, [dropAnimationFinishedAction, mapped]);
-    var provided = useMemo(function () {
+    var provided = React.useMemo(function () {
       var style = getStyle$1(mapped);
       var onTransitionEnd = mapped.type === 'DRAGGING' && mapped.dropping ? onMoveEnd : null;
       var result = {
@@ -10954,7 +10777,7 @@
       };
       return result;
     }, [contextId, dragHandleProps, draggableId, mapped, onMoveEnd, setRef]);
-    var rubric = useMemo(function () {
+    var rubric = React.useMemo(function () {
       return {
         draggableId: descriptor.id,
         type: descriptor.type,
@@ -11209,9 +11032,7 @@
     dropAnimationFinished: dropAnimationFinished
   };
   var ConnectedDraggable = connect(makeMapStateToProps, mapDispatchToProps, null, {
-    context: StoreContext,
-    pure: true,
-    areStatePropsEqual: isStrictEqual
+    context: StoreContext
   })(Draggable);
 
   function PrivateDraggable(props) {
@@ -11255,16 +11076,16 @@
         useClone = props.useClone,
         updateViewportMaxScroll = props.updateViewportMaxScroll,
         getContainerForClone = props.getContainerForClone;
-    var getDroppableRef = useCallback(function () {
+    var getDroppableRef = React.useCallback(function () {
       return droppableRef.current;
     }, []);
-    var setDroppableRef = useCallback(function (value) {
+    var setDroppableRef = React.useCallback(function (value) {
       droppableRef.current = value;
     }, []);
-    var getPlaceholderRef = useCallback(function () {
+    var getPlaceholderRef = React.useCallback(function () {
       return placeholderRef.current;
     }, []);
-    var setPlaceholderRef = useCallback(function (value) {
+    var setPlaceholderRef = React.useCallback(function (value) {
       placeholderRef.current = value;
     }, []);
     useValidation({
@@ -11272,7 +11093,7 @@
       getDroppableRef: getDroppableRef,
       getPlaceholderRef: getPlaceholderRef
     });
-    var onPlaceholderTransitionEnd = useCallback(function () {
+    var onPlaceholderTransitionEnd = React.useCallback(function () {
       if (isMovementAllowed()) {
         updateViewportMaxScroll({
           maxScroll: getMaxWindowScroll()
@@ -11305,7 +11126,7 @@
         onTransitionEnd: onPlaceholderTransitionEnd
       });
     });
-    var provided = useMemo(function () {
+    var provided = React.useMemo(function () {
       return {
         innerRef: setDroppableRef,
         placeholder: placeholder,
@@ -11316,7 +11137,7 @@
       };
     }, [contextId, droppableId, placeholder, setDroppableRef]);
     var isUsingCloneFor = useClone ? useClone.dragging.draggableId : null;
-    var droppableContext = useMemo(function () {
+    var droppableContext = React.useMemo(function () {
       return {
         droppableId: droppableId,
         type: type,

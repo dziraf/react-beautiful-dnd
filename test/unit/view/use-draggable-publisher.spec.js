@@ -1,8 +1,7 @@
 // @flow
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { type Spacing, type Rect } from 'css-box-model';
 import { mount, type ReactWrapper } from 'enzyme';
-import { useMemo } from 'use-memo-one';
 import { invariant } from '../../../src/invariant';
 import useDraggablePublisher from '../../../src/view/use-draggable-publisher';
 import {

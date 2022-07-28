@@ -1,7 +1,6 @@
 // @flow
 import { type Position } from 'css-box-model';
-import { useMemo, useCallback } from 'use-memo-one';
-import { useRef } from 'react';
+import { useRef, useMemo, useCallback } from 'react';
 import { invariant } from '../../invariant';
 import type {
   DraggableDescriptor,
