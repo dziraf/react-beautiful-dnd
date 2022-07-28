@@ -8510,7 +8510,6 @@ var defaultProps = {
 };
 var ConnectedDroppable = reactRedux.connect(makeMapStateToProps$1, mapDispatchToProps$1, null, {
   context: StoreContext,
-  pure: true,
   areStatePropsEqual: isStrictEqual
 })(Droppable);
 ConnectedDroppable.defaultProps = defaultProps;
